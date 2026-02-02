@@ -1,90 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:gaia/values/values.dart';
 
-// This class contains all the visual styling of the application.
-// It defines colors, background, fonts, and general UI appearance.
-// Keeping this in one file makes it easy to change the design globally.
-class AppTheme {
-  // We define a method that returns a ThemeData object.
-  // ThemeData is Flutter’s way of describing the look and feel of the app.
-  static ThemeData light() {
-    return ThemeData(
-      // We use Material 3 because it gives a more modern UI design.
-      useMaterial3: true,
+const _lightFillColor = AppColors.black;
 
-      // Primary color of the application.
-      // This will be used for buttons, progress bars, highlights, etc.
-      primaryColor: const Color(0xFF1F4FD8), // Medical blue
+final Color _lightFocusColor = AppColors.black.withOpacity(0.12);
 
-      // Background color for all screens.
-      scaffoldBackgroundColor: const Color(0xFFF5F8FF), // Light clean background
+const _extraBold = FontWeight.w900;
+const _bold = FontWeight.w700;
+const _semiBold = FontWeight.w600;
+const _medium = FontWeight.w500;
+const _regular = FontWeight.w400;
+// static const _light = FontWeight.w300;
 
-      // Default font family for the whole app.
-      // You can later replace this with Inter or Roboto.
-      fontFamily: 'Roboto',
+final _textTheme = TextTheme(
+  displayLarge: GoogleFonts.inter(
+    fontWeight: _extraBold,
+    fontSize: 72.0,
+    color: AppColors.gray,
+  ),
+  displayMedium: GoogleFonts.inter(
+    fontWeight: _extraBold,
+    fontSize: 48.0,
+    color: AppColors.gray,
+  ),
+  displaySmall: GoogleFonts.inter(
+    fontWeight: _extraBold,
+    fontSize: 40.0,
+    color: AppColors.gray,
+  ),
+  headlineMedium: GoogleFonts.inter(
+    fontWeight: _extraBold,
+    fontSize: 28.0,
+    color: AppColors.gray,
+  ),
+  headlineSmall: GoogleFonts.inter(
+    fontWeight: _semiBold,
+    fontSize: 24.0,
+    color: AppColors.gray,
+  ),
+  titleLarge: GoogleFonts.inter(
+    fontWeight: _medium,
+    fontSize: 20.0,
+    color: AppColors.gray,
+  ),
+  titleMedium: GoogleFonts.inter(
+    fontWeight: _bold,
+    fontSize: 18.0,
+    color: AppColors.gray,
+  ),
+  titleSmall: GoogleFonts.inter(
+    fontWeight: _medium,
+    fontSize: 18.0,
+    color: AppColors.gray,
+  ),
+  bodyLarge: GoogleFonts.inter(
+    fontWeight: _regular,
+    fontSize: 16.0,
+    color: AppColors.gray,
+  ),
+  bodyMedium: GoogleFonts.inter(
+    fontWeight: _regular,
+    fontSize: 14.0,
+    color: AppColors.gray,
+  ),
+);
 
-      // Text styling configuration.
-      textTheme: const TextTheme(
-        // Large titles (like page titles)
-        titleLarge: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF1E293B),
-        ),
+// lead text styles
+final lead1 = GoogleFonts.inter(
+  fontWeight: _regular,
+  fontSize: 18.0,
+  color: AppColors.gray,
+);
 
-        // Normal body text
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Color(0xFF64748B),
-        ),
-      ),
+final lead2 = GoogleFonts.inter(
+  fontWeight: _medium,
+  fontSize: 14.0,
+  color: AppColors.gray,
+);
 
-      // AppBar (top bar) styling
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF1E293B),
-        ),
-        iconTheme: IconThemeData(
-          color: Color(0xFF1E293B),
-        ),
-      ),
+// label text styles
+final largeLabel = GoogleFonts.inter(
+  fontWeight: _semiBold,
+  fontSize: 20.0,
+  color: AppColors.black,
+);
 
-      // Card styling (used later for wizard steps and result boxes)
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 1.0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
+final mediumLabel = GoogleFonts.inter(
+  fontWeight: _semiBold,
+  fontSize: 14.0,
+  color: AppColors.gray,
+);
 
-      // Button styling for all ElevatedButtons in the app
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1F4FD8),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+final smallLabel = GoogleFonts.inter(
+  fontWeight: _semiBold,
+  fontSize: 12.0,
+  color: AppColors.gray,
+);
 
-      // Input field styling (TextField, TextFormField)
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
+ThemeData themeData(ColorScheme colorScheme, Color focusColor) {
+  return ThemeData(
+    colorScheme: colorScheme,
+    textTheme: _textTheme,
+    canvasColor: colorScheme.surface,
+    scaffoldBackgroundColor: colorScheme.surface,
+    highlightColor: Colors.transparent,
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    focusColor: AppColors.purple,
+  );
 }
+
+ColorScheme _lightColorScheme = ColorScheme(
+  primary: AppColors.purple,
+  primaryContainer: AppColors.purple.shade800,
+  secondary: AppColors.turquoise,
+  secondaryContainer: AppColors.turquoise.shade800,
+  surface: AppColors.white,
+  
+
+  error: _lightFillColor,
+  onError: _lightFillColor,
+  onPrimary: _lightFillColor,
+  onSecondary: AppColors.white,
+  onSurface: AppColors.gray,
+  brightness: Brightness.light,
+);
+
+ThemeData lightThemeData = themeData(_lightColorScheme, _lightFocusColor);
