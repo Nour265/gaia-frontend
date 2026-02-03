@@ -26,8 +26,8 @@ class Routes {
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
   static Map<String, WidgetBuilder> get map => {
-        // When Flutter navigates to '/', it builds the LandingPage widget.
-        landing: (_) => const LandingPage(),
+        // When Flutter navigates to '/', it builds the HomePage widget.
+        landing: (_) => const HomePage(),
 
         // When Flutter navigates to '/wizard', it builds the SymptomWizard widget.
         wizard: (_) => const SymptomWizard(),

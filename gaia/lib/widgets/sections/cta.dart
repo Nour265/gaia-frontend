@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gaia/app/theme.dart';
+import 'package:gaia/app/routes.dart';
 import 'package:gaia/values/values.dart';
 
 class Cta extends StatelessWidget {
@@ -66,8 +67,8 @@ class Cta extends StatelessWidget {
                       height: 52,
                       child: ElevatedButton(
                         onPressed: () {
-                          
-                        },
+                            Navigator.pushNamed(context, Routes.wizard);
+                          },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.purple,
                           foregroundColor: AppColors.white,

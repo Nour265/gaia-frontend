@@ -8,6 +8,8 @@ import 'package:gaia/widgets/sections/heros.dart';
 import 'package:gaia/widgets/sections/stats.dart';
 import 'package:gaia/widgets/sections/testimonials.dart';
 class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
