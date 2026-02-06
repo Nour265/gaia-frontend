@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gaia/values/values.dart'; 
 import 'package:gaia/app/routes.dart';
+import 'package:gaia/widgets/navbar.dart'; // Ensure this path and class name match your file
 
 class SymptomWizard extends StatefulWidget {
   const SymptomWizard({super.key});
@@ -16,8 +17,10 @@ class _SymptomWizardState extends State<SymptomWizard> {
   // Collected symptoms to pass to the ResultsPage
   final Set<String> _finalSymptoms = {};
 
+  // Track the currently highlighted option before confirmation
+  String? _selectedOption;
+
   // THE DECISION TREE
-  // Built from your dataset clusters: Respiratory, GI, Neuro, and Musculoskeletal
   final Map<String, Map<String, dynamic>> _tree = {
     'root': {
       'question': 'What is the primary area of discomfort?',
@@ -94,19 +97,28 @@ class _SymptomWizardState extends State<SymptomWizard> {
     'body_finish': {'question': 'How is your movement?', 'options': ['Joint pain', 'Stiffness/Tightness', 'Problems with movement', 'None'], 'next': {'default': 'finish'}},
   };
 
-  void _handleChoice(String choice) {
+  void _selectOption(String choice) {
     setState(() {
-      _finalSymptoms.add(choice);
+      _selectedOption = choice;
+    });
+  }
+
+  void _confirmSelection() {
+    if (_selectedOption == null) return;
+
+    setState(() {
+      _finalSymptoms.add(_selectedOption!);
       String currentKey = _history.last;
-      String nextNode = _tree[currentKey]?['next'][choice] ?? 
+      String nextNode = _tree[currentKey]?['next'][_selectedOption!] ?? 
                         _tree[currentKey]?['next']['default'] ?? 
                         'finish';
 
       if (nextNode == 'finish' || _history.length >= 15) {
-        // Navigate to results and pass the list of symptoms collected along the path
+        // Navigate to results and pass the list of symptoms collected
         Navigator.pushNamed(context, Routes.results, arguments: _finalSymptoms.toList());
       } else {
         _history.add(nextNode);
+        _selectedOption = null; // Reset selection for the next question
       }
     });
   }
@@ -115,7 +127,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
     if (_history.length > 1) {
       setState(() {
         _history.removeLast();
-        // We keep the symptoms in the set for now, or you could implement logic to remove the last one
+        _selectedOption = null; // Clear selection when going back
       });
     }
   }
@@ -128,21 +140,13 @@ class _SymptomWizardState extends State<SymptomWizard> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F9FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF0F9FF),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: _prevStep,
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.monitor_heart, color: activeColor),
-            const SizedBox(width: 8),
-            Text('GAIA', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
-          ],
-        ),
+      
+      // Fixed Navbar at the top of the page
+      appBar: const PreferredSize(
+        preferredSize: Size.fromHeight(80), 
+        child: NavBar(), 
       ),
+
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -218,6 +222,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
           const SizedBox(height: 8),
           Text(node['subtitle'] ?? 'Choose the option that fits best', style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 32),
+          
           Expanded(
             child: ListView.builder(
               itemCount: options.length,
@@ -226,31 +231,86 @@ class _SymptomWizardState extends State<SymptomWizard> {
               },
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // BACK and CONFIRMATION buttons inside the card
+          Row(
+            children: [
+              if (_history.length > 1) 
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _prevStep,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Back", style: TextStyle(color: Colors.black54)),
+                  ),
+                ),
+              
+              if (_history.length > 1) const SizedBox(width: 12),
+
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: _selectedOption != null ? _confirmSelection : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: activeColor,
+                    disabledBackgroundColor: Colors.grey.shade200,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    "Confirm Choice",
+                    style: TextStyle(
+                      color: _selectedOption != null ? Colors.white : Colors.grey.shade500,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildOptionTile(String option, Color activeColor, ThemeData theme) {
+    final bool isSelected = _selectedOption == option;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
-        onTap: () => _handleChoice(option),
+        onTap: () => _selectOption(option),
         borderRadius: BorderRadius.circular(12),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: isSelected ? activeColor.withOpacity(0.05) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200, width: 1),
+            border: Border.all(
+              color: isSelected ? activeColor : Colors.grey.shade200, 
+              width: isSelected ? 2 : 1
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.radio_button_off, color: Colors.grey.shade400),
+              Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: isSelected ? activeColor : Colors.grey.shade400,
+              ),
               const SizedBox(width: 16),
               Text(
                 option,
-                style: theme.textTheme.titleMedium?.copyWith(color: const Color(0xFF0F172A)),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isSelected ? activeColor : const Color(0xFF0F172A),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ],
           ),
