@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gaia/app/routes.dart';
 import 'package:gaia/values/values.dart';
 
 class Heros extends StatelessWidget {
@@ -36,7 +37,7 @@ class Heros extends StatelessWidget {
                 // LEFT: text
                 Expanded(
                   flex: 3, // give text more room so image sits more to the right
-                  child: _buildContent(textTheme),
+                  child: _buildContent(context, textTheme),
                 ),
 
                 // gap between text and image (adjust as needed)
@@ -70,7 +71,7 @@ class Heros extends StatelessWidget {
     );
   }
 
-  Column _buildContent(TextTheme textTheme) {
+  Column _buildContent(BuildContext context, TextTheme textTheme) {
     // If your text is too big, change displayLarge to displayMedium (or apply copyWith(fontSize: ...))
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -82,7 +83,9 @@ class Heros extends StatelessWidget {
         Text('Our Priority.', style: textTheme.displayMedium),
         const SizedBox(height: 40),
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, Routes.wizard);
+          },
           style: TextButton.styleFrom(
             foregroundColor: AppColors.white,
             backgroundColor: AppColors.purple,

@@ -12,10 +12,11 @@ class ImagePath {
   static const brain = '$imageDir/brain.png';
   static const check = '$imageDir/check.png';
   static const quoteMark = '$imageDir/quote_mark.png';
-  static const coverImg = '$imageDir/cover_img.png';
+  static const coverImg = '$imageDir/consult.png';
   static const interaction = '$imageDir/interaction.png';
   static const googleplay = '$imageDir/google_play.png';
   static const appstore = '$imageDir/app_store.png';
+  static const consult = '$imageDir/consult.png';
 
   // feature icons
   static const featureIcon1 = '$imageDir/featureIcon1.png';

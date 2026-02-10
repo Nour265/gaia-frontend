@@ -7,7 +7,6 @@ import 'package:gaia/widgets/sections/footer.dart';
 import 'package:gaia/widgets/sections/heros.dart';
 import 'package:gaia/widgets/sections/stats.dart';
 import 'package:gaia/widgets/sections/testimonials.dart';
-import 'package:gaia/services/api_service.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -26,7 +25,7 @@ class HomePage extends StatelessWidget {
           child: Center(
             child: SizedBox(
               width: size.width * 0.7,
-              child: const NavBar(),
+              child: const NavBar(showLogin: true),
             ),
           ),
         ),
@@ -40,54 +39,6 @@ class HomePage extends StatelessWidget {
             const Testimonials(),
             const Stats(),
             const Cta(),
-
-            // 🔽 THIS IS THE BACKEND TEST BUTTON 🔽
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final result = await ApiService.createAssessment(
-                      age: 30,
-                      gender: "male",
-                      symptoms: [
-                        {
-                          "name": "fever",
-                          "severity": 4,
-                          "duration_days": 2
-                        },
-                        {
-                          "name": "cough",
-                          "severity": 2,
-                          "duration_days": 5
-                        },
-                      ],
-                    );
-
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Backend OK: ${result["risk_level"]}",
-                          ),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Backend Error: $e"),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text("Test Backend"),
-              ),
-            ),
-            // 🔼 END BACKEND TEST BUTTON 🔼
-
             const Footer(),
           ],
         ),
