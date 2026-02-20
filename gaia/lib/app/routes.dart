@@ -40,9 +40,6 @@ class Routes {
         // When Flutter navigates to '/wizard', it builds the SymptomWizard widget.
         wizard: (_) => const SymptomWizard(),
 
-        // When Flutter navigates to '/results', it builds the ResultsPage widget.
-        results: (_) => const ResultsPage(),
-
         // When Flutter navigates to '/about', it builds the AboutPage widget.
         about: (_) => const AboutPage(),
 
