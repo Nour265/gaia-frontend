@@ -6,6 +6,10 @@ import '../screens/landing/landing_page.dart';
 import '../screens/wizard/symptom_wizard.dart';
 import '../screens/results/results_page.dart';
 import '../screens/about/about_page.dart';
+import '../screens/auth/login_page.dart';
+import '../screens/auth/signup_page.dart';
+import '../screens/auth/forgot_password_page.dart';
+import '../screens/profile/profile_page.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
@@ -22,6 +26,10 @@ class Routes {
 
   // Route name for the about/disclaimer page.
   static const String about = '/about';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String forgotPassword = '/forgot-password';
+  static const String profile = '/profile';
 
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
@@ -37,5 +45,17 @@ class Routes {
 
         // When Flutter navigates to '/about', it builds the AboutPage widget.
         about: (_) => const AboutPage(),
+
+        // When Flutter navigates to '/login', it builds the LoginPage widget.
+        login: (_) => const LoginPage(),
+
+        // When Flutter navigates to '/signup', it builds the SignupPage widget.
+        signup: (_) => const SignupPage(),
+
+        // When Flutter navigates to '/forgot-password', it builds the ForgotPasswordPage widget.
+        forgotPassword: (_) => const ForgotPasswordPage(),
+
+        // When Flutter navigates to '/profile', it builds the ProfilePage widget.
+        profile: (_) => const ProfilePage(),
       };
 }

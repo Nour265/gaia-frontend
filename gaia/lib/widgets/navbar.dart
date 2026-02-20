@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/services/auth_session.dart';
 
 class NavBar extends StatelessWidget {
   const NavBar({
@@ -84,15 +85,48 @@ class ImageLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _LoginButton(
-          label: 'Login',
-          textTheme: textTheme,
-          onPressed: () {},
-        ),
-      ],
+    return ValueListenableBuilder<AuthUser?>(
+      valueListenable: AuthSession.userNotifier,
+      builder: (context, user, _) {
+        if (user != null) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _LoginButton(
+                label: 'Profile',
+                icon: Icons.person_outline,
+                textTheme: textTheme,
+                onPressed: () {
+                  Navigator.pushNamed(context, Routes.profile);
+                },
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LoginButton(
+              label: 'Login',
+              icon: Icons.login,
+              textTheme: textTheme,
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.login);
+              },
+            ),
+            const SizedBox(width: 12),
+            _LoginButton(
+              label: 'Sign Up',
+              icon: Icons.person_add_alt_1,
+              textTheme: textTheme,
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.signup);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -124,11 +158,13 @@ class _LoginButton extends StatefulWidget {
     Key? key,
     required this.label,
     required this.textTheme,
+    this.icon = Icons.login,
     this.onPressed,
   }) : super(key: key);
 
   final String label;
   final TextTheme textTheme;
+  final IconData icon;
   final VoidCallback? onPressed;
 
   @override
@@ -140,12 +176,12 @@ class _LoginButtonState extends State<_LoginButton> {
 
   @override
   Widget build(BuildContext context) {
-    final outerRadius = BorderRadius.circular(999);
-    final innerRadius = BorderRadius.circular(999);
-    final textColor = _hovered ? AppColors.turquoise : AppColors.purple;
-    final iconColor = _hovered ? AppColors.turquoise : AppColors.purple;
-    final fillColor =
-        _hovered ? AppColors.gray.shade100 : AppColors.white;
+    final radius = BorderRadius.circular(999);
+    final textColor = _hovered ? AppColors.gray.shade900 : AppColors.gray.shade800;
+    final iconColor = textColor;
+    final fillColor = _hovered ? AppColors.gray.shade100 : Colors.transparent;
+    final borderColor =
+        _hovered ? AppColors.gray.shade300 : AppColors.gray.shade200;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -157,41 +193,29 @@ class _LoginButtonState extends State<_LoginButton> {
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                AppColors.purple,
-                AppColors.turquoise,
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: outerRadius,
+            color: fillColor,
+            borderRadius: radius,
+            border: Border.all(color: borderColor),
           ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: fillColor,
-              borderRadius: innerRadius,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.login, size: 16, color: iconColor),
-                const SizedBox(width: 6),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  style: widget.textTheme.titleSmall!.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                  child: Text(widget.label),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 14, color: iconColor),
+              const SizedBox(width: 6),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
+                style: (widget.textTheme.labelLarge ??
+                        const TextStyle(fontSize: 12))
+                    .copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
-              ],
-            ),
+                child: Text(widget.label),
+              ),
+            ],
           ),
         ),
       ),
