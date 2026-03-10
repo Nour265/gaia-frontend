@@ -7,6 +7,7 @@ import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:latlong2/latlong.dart';
 
+
 class ResultsPage extends StatefulWidget {
   final int age;
   final String gender;
@@ -72,6 +73,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
     ),
   ];
 
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +92,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
     _mapAnimationController?.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -284,22 +287,22 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 12),
-                          _DoctorMap(
-                            mapController: _mapController,
-                            userLocation: _userLocation,
-                            doctors: filteredDoctors,
-                            activeDoctor: activeDoctor,
-                            onReady: () => _mapReady = true,
-                            onSelect: (index) {
-                              final selected = filteredDoctors[index];
-                              final originalIndex = _doctors.indexOf(selected);
-                              setState(() {
-                                _selectedDoctorIndex = originalIndex;
-                              });
-                              _animateTo(selected.location, 13.8);
-                            },
-                            height: isWide ? 300 : 340,
-                          ),
+                        _DoctorMap(
+                          mapController: _mapController,
+                          userLocation: _userLocation,
+                          doctors: filteredDoctors,
+                          activeDoctor: activeDoctor,
+                          onReady: () => _mapReady = true,
+                          onSelect: (index) {
+                            final selected = filteredDoctors[index];
+                            final originalIndex = _doctors.indexOf(selected);
+                            setState(() {
+                              _selectedDoctorIndex = originalIndex;
+                            });
+                            _animateTo(selected.location, 13.8);
+                          },
+                          height: isWide ? 300 : 340,
+                        ),
                         const SizedBox(height: 12),
                         controls,
                         const SizedBox(height: 16),
@@ -330,7 +333,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                       ],
                     );
                   },
-                )
+                ),
               ),
             );
           }
