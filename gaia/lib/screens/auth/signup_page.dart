@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
@@ -117,12 +118,16 @@ class _SignupPageState extends State<SignupPage> {
             : _googleServerClientId,
       );
 
-      final account = await googleSignIn.signIn();
+      final account = await googleSignIn
+          .signIn()
+          .timeout(const Duration(seconds: 60));
       if (account == null) {
         throw Exception("Google sign-in was canceled.");
       }
 
-      final auth = await account.authentication;
+      final auth = await account.authentication.timeout(
+        const Duration(seconds: 20),
+      );
       final idToken = auth.idToken;
       final accessToken = auth.accessToken;
 
@@ -213,6 +218,9 @@ class _SignupPageState extends State<SignupPage> {
     }
     if (message.contains("SocketException")) {
       return "Unable to reach the server. Is the backend running?";
+    }
+    if (message.contains("TimeoutException")) {
+      return "Request timed out. Check your backend connection and try again.";
     }
 
     final cleaned = message.replaceFirst(RegExp(r"^Exception:\s*"), "").trim();

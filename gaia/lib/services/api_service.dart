@@ -1,18 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:gaia/services/auth_session.dart';
 
 class ApiService {
   static const String baseUrl = "http://127.0.0.1:8000";
+  static const Duration _requestTimeout = Duration(seconds: 20);
 
   static Future<Map<String, dynamic>> createAssessment({
     required int age,
     required String gender,
     required List<Map<String, dynamic>> symptoms,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/assessments"),
-      headers: _headers(),
       body: jsonEncode({
         "age": age,
         "gender": gender,
@@ -38,9 +39,8 @@ class ApiService {
     String? phone,
     String? location,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/signup"),
-      headers: _headers(),
       body: jsonEncode({
         "name": name,
         "email": email,
@@ -66,9 +66,8 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/login"),
-      headers: _headers(),
       body: jsonEncode({
         "email": email,
         "password": password,
@@ -92,9 +91,8 @@ class ApiService {
     String? phone,
     String? location,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/google"),
-      headers: _headers(),
       body: jsonEncode({
         "id_token": idToken,
         if (age != null) "age": age,
@@ -121,9 +119,8 @@ class ApiService {
     String? phone,
     String? location,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/google/access"),
-      headers: _headers(),
       body: jsonEncode({
         "access_token": accessToken,
         if (age != null) "age": age,
@@ -147,10 +144,7 @@ class ApiService {
     if (AuthSession.token == null) {
       throw Exception("Auth error 401: Missing token");
     }
-    final response = await http.get(
-      Uri.parse("$baseUrl/auth/me"),
-      headers: _headers(),
-    );
+    final response = await _get(Uri.parse("$baseUrl/auth/me"));
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -171,9 +165,8 @@ class ApiService {
     String? phone,
     String? location,
   }) async {
-    final response = await http.put(
+    final response = await _put(
       Uri.parse("$baseUrl/auth/me"),
-      headers: _headers(),
       body: jsonEncode({
         if (name != null) "name": name,
         if (email != null) "email": email,
@@ -205,9 +198,8 @@ class ApiService {
   }
 
   static Future<void> requestPasswordReset({required String email}) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/forgot"),
-      headers: _headers(),
       body: jsonEncode({"email": email}),
     );
 
@@ -221,9 +213,8 @@ class ApiService {
     required String code,
     required String newPassword,
   }) async {
-    final response = await http.post(
+    final response = await _post(
       Uri.parse("$baseUrl/auth/reset"),
-      headers: _headers(),
       body: jsonEncode({
         "email": email,
         "code": code,
@@ -268,5 +259,40 @@ class ApiService {
     }
 
     return Exception("$prefix error $status: ${body.isEmpty ? "Unknown error" : body}");
+  }
+
+  static Future<http.Response> _post(
+    Uri url, {
+    Object? body,
+  }) {
+    return http
+        .post(
+          url,
+          headers: _headers(),
+          body: body,
+        )
+        .timeout(_requestTimeout);
+  }
+
+  static Future<http.Response> _get(Uri url) {
+    return http
+        .get(
+          url,
+          headers: _headers(),
+        )
+        .timeout(_requestTimeout);
+  }
+
+  static Future<http.Response> _put(
+    Uri url, {
+    Object? body,
+  }) {
+    return http
+        .put(
+          url,
+          headers: _headers(),
+          body: body,
+        )
+        .timeout(_requestTimeout);
   }
 }
