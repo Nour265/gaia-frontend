@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -11,6 +13,15 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  static const String _googleClientId = String.fromEnvironment(
+    "GAIA_GOOGLE_CLIENT_ID",
+    defaultValue:
+        "466714216329-edlr37blfk69r93n2qa7pqs8b42s5a4l.apps.googleusercontent.com",
+  );
+  static const String _googleServerClientId = String.fromEnvironment(
+    "GAIA_GOOGLE_SERVER_CLIENT_ID",
+  );
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -83,8 +94,117 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
+  Future<void> _signUpWithGoogle() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (kIsWeb && _googleClientId.isEmpty) {
+        throw Exception(
+          "Google Web client ID is missing. Run with --dart-define=GAIA_GOOGLE_CLIENT_ID=<your_web_client_id>.",
+        );
+      }
+
+      final googleSignIn = GoogleSignIn(
+        scopes: const ["email", "profile", "openid"],
+        clientId: _googleClientId.isEmpty ? null : _googleClientId,
+        serverClientId: _googleServerClientId.isEmpty
+            ? null
+            : _googleServerClientId,
+      );
+
+      final account = await googleSignIn.signIn();
+      if (account == null) {
+        throw Exception("Google sign-in was canceled.");
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      final accessToken = auth.accessToken;
+
+      final ageText = _ageController.text.trim();
+      final parsedAge = ageText.isEmpty ? null : int.tryParse(ageText);
+      if (ageText.isNotEmpty && parsedAge == null) {
+        throw Exception("Invalid age");
+      }
+
+      final phone = _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim();
+      final location = _locationController.text.trim().isEmpty
+          ? null
+          : _locationController.text.trim();
+
+      if (idToken != null && idToken.isNotEmpty) {
+        await ApiService.authenticateWithGoogle(
+          idToken: idToken,
+          age: parsedAge,
+          gender: _gender,
+          phone: phone,
+          location: location,
+        );
+      } else if (accessToken != null && accessToken.isNotEmpty) {
+        await ApiService.authenticateWithGoogleAccessToken(
+          accessToken: accessToken,
+          age: parsedAge,
+          gender: _gender,
+          phone: phone,
+          location: location,
+        );
+      } else {
+        throw Exception("Google id and access tokens are missing.");
+      }
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, Routes.landing);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   String _friendlyError(Object error) {
     final message = error.toString();
+    final backendDetail = _extractBackendDetail(message);
+
+    if (backendDetail != null && backendDetail.isNotEmpty) {
+      return backendDetail;
+    }
+
+    if (message.contains("Google sign-in was canceled")) {
+      return "Google sign-in was canceled.";
+    }
+    if (message.contains("popup_closed")) {
+      return "Google sign-in popup was closed.";
+    }
+    if (message.contains("popup_blocked")) {
+      return "Allow popups for this site to continue with Google sign-in.";
+    }
+    if (message.contains("idpiframe_initialization_failed")) {
+      return "Google sign-in is blocked by browser privacy settings.";
+    }
+    if (message.contains("Google id token missing")) {
+      return "Google sign-in is not fully configured on this app yet.";
+    }
+    if (message.contains("Google id and access tokens are missing")) {
+      return "Google sign-in did not return tokens for this session.";
+    }
+    if (message.contains("Invalid Google token") ||
+        message.contains("Google client id is not allowed")) {
+      return "Google sign-in failed. Check OAuth client IDs.";
+    }
     if (message.contains("409")) {
       return "Email already registered. Try logging in.";
     }
@@ -94,7 +214,38 @@ class _SignupPageState extends State<SignupPage> {
     if (message.contains("SocketException")) {
       return "Unable to reach the server. Is the backend running?";
     }
+
+    final cleaned = message.replaceFirst(RegExp(r"^Exception:\s*"), "").trim();
+    if (cleaned.isNotEmpty && cleaned != "Exception") {
+      return cleaned.length > 180 ? "${cleaned.substring(0, 180)}..." : cleaned;
+    }
+
     return "Unable to create account. Please try again.";
+  }
+
+  String? _extractBackendDetail(String message) {
+    final detailMatch = RegExp(
+      r'''["']detail["']\s*:\s*["']([^"']+)["']''',
+    ).firstMatch(message);
+    if (detailMatch != null) {
+      return detailMatch.group(1);
+    }
+
+    final msgMatch = RegExp(
+      r'''["']msg["']\s*:\s*["']([^"']+)["']''',
+    ).firstMatch(message);
+    if (msgMatch != null) {
+      return msgMatch.group(1);
+    }
+
+    final messageMatch = RegExp(
+      r'''["']message["']\s*:\s*["']([^"']+)["']''',
+    ).firstMatch(message);
+    if (messageMatch != null) {
+      return messageMatch.group(1);
+    }
+
+    return null;
   }
 
   @override
@@ -365,6 +516,22 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
+                          SizedBox(
+                            height: 52,
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _signUpWithGoogle,
+                              icon: _googleMark(),
+                              label: const Text("Sign up with Google"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.gray.shade900,
+                                side: BorderSide(color: AppColors.gray.shade300),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
                           TextButton(
                             onPressed: () {
                               Navigator.pushReplacementNamed(
@@ -418,6 +585,25 @@ class _SignupPageState extends State<SignupPage> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
+      ),
+    );
+  }
+
+  Widget _googleMark() {
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        "G",
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF4285F4),
+        ),
       ),
     );
   }

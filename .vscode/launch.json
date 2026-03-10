@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GAIA (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "gaia/lib/main.dart",
+      "cwd": "gaia",
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--web-hostname",
+        "localhost",
+        "--web-port",
+        "5000",
+        "--dart-define=GAIA_GOOGLE_CLIENT_ID=466714216329-edlr37blfk69r93n2qa7pqs8b42s5a4l.apps.googleusercontent.com"
+      ]
+    }
+  ]
+}

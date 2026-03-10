@@ -58,9 +58,7 @@ class ApiService {
       AuthSession.setSession(token: data["token"] as String, user: user);
       return user;
     } else {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
     }
   }
 
@@ -83,9 +81,65 @@ class ApiService {
       AuthSession.setSession(token: data["token"] as String, user: user);
       return user;
     } else {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
+    }
+  }
+
+  static Future<AuthUser> authenticateWithGoogle({
+    required String idToken,
+    int? age,
+    String? gender,
+    String? phone,
+    String? location,
+  }) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/auth/google"),
+      headers: _headers(),
+      body: jsonEncode({
+        "id_token": idToken,
+        if (age != null) "age": age,
+        if (gender != null) "gender": gender,
+        if (phone != null) "phone": phone,
+        if (location != null) "location": location,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final user = AuthUser.fromJson(data["user"] as Map<String, dynamic>);
+      AuthSession.setSession(token: data["token"] as String, user: user);
+      return user;
+    } else {
+      throw _buildApiException("Auth", response);
+    }
+  }
+
+  static Future<AuthUser> authenticateWithGoogleAccessToken({
+    required String accessToken,
+    int? age,
+    String? gender,
+    String? phone,
+    String? location,
+  }) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/auth/google/access"),
+      headers: _headers(),
+      body: jsonEncode({
+        "access_token": accessToken,
+        if (age != null) "age": age,
+        if (gender != null) "gender": gender,
+        if (phone != null) "phone": phone,
+        if (location != null) "location": location,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final user = AuthUser.fromJson(data["user"] as Map<String, dynamic>);
+      AuthSession.setSession(token: data["token"] as String, user: user);
+      return user;
+    } else {
+      throw _buildApiException("Auth", response);
     }
   }
 
@@ -104,9 +158,7 @@ class ApiService {
       AuthSession.updateUser(user);
       return user;
     } else {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
     }
   }
 
@@ -139,9 +191,7 @@ class ApiService {
       AuthSession.updateUser(user);
       return user;
     } else {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
     }
   }
 
@@ -162,9 +212,7 @@ class ApiService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
     }
   }
 
@@ -184,9 +232,41 @@ class ApiService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        "Auth error ${response.statusCode}: ${response.body}",
-      );
+      throw _buildApiException("Auth", response);
     }
+  }
+
+  static Exception _buildApiException(String prefix, http.Response response) {
+    final status = response.statusCode;
+    final body = response.body.trim();
+
+    if (body.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic>) {
+          final detail = decoded["detail"];
+          if (detail is String && detail.isNotEmpty) {
+            return Exception("$prefix error $status: $detail");
+          }
+          if (detail is List && detail.isNotEmpty) {
+            final first = detail.first;
+            if (first is Map<String, dynamic>) {
+              final msg = first["msg"];
+              if (msg is String && msg.isNotEmpty) {
+                return Exception("$prefix error $status: $msg");
+              }
+            }
+          }
+          final message = decoded["message"];
+          if (message is String && message.isNotEmpty) {
+            return Exception("$prefix error $status: $message");
+          }
+        }
+      } catch (_) {
+        // Keep raw body fallback below.
+      }
+    }
+
+    return Exception("$prefix error $status: ${body.isEmpty ? "Unknown error" : body}");
   }
 }
