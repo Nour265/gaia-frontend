@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
+import 'package:gaia/values/values.dart';
 import 'package:latlong2/latlong.dart';
 
 
@@ -98,8 +99,15 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assessment Results'),
+        title: const Text(
+          'Assessment Results',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
         centerTitle: true,
+        elevation: 2,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _predictionFuture,
@@ -134,7 +142,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
 
             return SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth >= 1000;
@@ -185,63 +193,225 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                           );
 
                     final infoColumn = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Top Prediction (Main Feature)
+                        if (data['top_3_predictions'] != null && (data['top_3_predictions'] as List).isNotEmpty)
+                          Column(
+                            children: [
+                              Text(
+                                'Predicted Condition',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: AppColors.gray[700],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Card(
+                                color: AppColors.purple,
+                                elevation: 6,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        (data['top_3_predictions'][0] as Map)['disease'] ?? 'Unknown',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(200),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          'Confidence: ${((data['top_3_predictions'][0] as Map)['probability'] * 100).toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.purple,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Top 3 Predictions
+                              Text(
+                                'Alternative Predictions',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                  color: AppColors.gray[900],
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              ...List.generate(
+                                (data['top_3_predictions'] as List).length,
+                                (index) {
+                                  final prediction = (data['top_3_predictions'] as List)[index] as Map;
+                                  final percentage = (prediction['probability'] as num) * 100;
+                                  final colors = [AppColors.turquoise, AppColors.orange, AppColors.pink];
+                                  final color = colors[index % colors.length];
+                                  
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: color[100],
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: color[800]!, width: 1.5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    '${index + 1}. ${prediction['disease']}',
+                                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                                      fontWeight: FontWeight.w600,
+                                                      color: AppColors.gray[900],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: color[800]!.withAlpha(100),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '${percentage.toStringAsFixed(1)}%',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                  color: color[800],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
                         // Risk Level Card
                         Card(
                           color: _getRiskColor(data['risk_level']),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(24.0),
                             child: Column(
                               children: [
                                 Text(
-                                  'Risk Level',
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  'Risk Level Assessment',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.white70,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
                                 Text(
                                   data['risk_level'],
                                   style: const TextStyle(
-                                    fontSize: 28,
+                                    fontSize: 36,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
+                                    letterSpacing: 1,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        // Confidence Score
-                        Text(
-                          'Confidence: ${(data['probability'] * 100).toStringAsFixed(1)}%',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
                         // Explanation
                         Text(
-                          'Assessment',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          'Assessment Summary',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: AppColors.purple,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(data['explanation']),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppColors.purple[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.purple[800]!, width: 1.5),
+                          ),
+                          child: Text(
+                            data['explanation'],
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              height: 1.6,
+                              color: AppColors.gray[900],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         // Recommendation
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.orange[100],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.orange, width: 2),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
-                                'Recommendation',
-                                style: Theme.of(context).textTheme.titleMedium,
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lightbulb_outline, color: AppColors.orange, size: 24),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Recommendation',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      color: AppColors.orange,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(data['recommendation']),
+                              const SizedBox(height: 14),
+                              Text(
+                                data['recommendation'],
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  height: 1.6,
+                                  color: AppColors.gray[900],
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -251,10 +421,22 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                     final controls = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Max distance: ${_maxDistanceKm.toStringAsFixed(0)} km',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.pink[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.pink[800]!, width: 1),
+                          ),
+                          child: Text(
+                            'Filter Distance: ${_maxDistanceKm.toStringAsFixed(0)} km',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.pink,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
+                        const SizedBox(height: 12),
                         Slider(
                           value: _maxDistanceKm,
                           min: 1,
@@ -267,9 +449,21 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                             });
                           },
                         ),
-                        Text(
-                          'Showing ${filteredDoctors.length} doctors',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.pastelGreen.withAlpha(200),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.pastelGreen, width: 1),
+                          ),
+                          child: Text(
+                            'Found ${filteredDoctors.length} doctor${filteredDoctors.length != 1 ? 's' : ''}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.gray[900],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
                     );
@@ -279,12 +473,27 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                       children: [
                         Text(
                           'Nearby Doctors',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: AppColors.purple,
+                          ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Interactive demo: pan, zoom, and tap a pin to match a doctor.',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.pastelBlue.withAlpha(150),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.turquoise[800]!, width: 1.5),
+                          ),
+                          child: Text(
+                            'Pan, zoom, and tap pins to match with doctors.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.gray[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         _DoctorMap(
@@ -312,7 +521,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
 
                     if (!isWide) {
                       return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           infoColumn,
                           const SizedBox(height: 24),
@@ -324,7 +533,14 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: infoColumn),
+                        Expanded(
+                          child: Center(
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 500),
+                              child: infoColumn,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 24),
                         SizedBox(
                           width: 360,
@@ -553,82 +769,93 @@ class _DoctorDetailsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Card(
-      elevation: 2,
+      elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
       child: SizedBox(
         width: double.infinity,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 doctor.name,
-                style: textTheme.titleMedium,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               '${doctor.specialty} · ${distanceKm.toStringAsFixed(1)} km away',
-              style: textTheme.bodyMedium,
+              style: textTheme.bodyMedium?.copyWith(
+                color: Colors.grey.shade700,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 18),
                 const SizedBox(width: 4),
-                Text('${doctor.rating} rating'),
-                const SizedBox(width: 16),
+                Text(
+                  '${doctor.rating} rating',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(width: 20),
                 const Icon(Icons.schedule, size: 18),
                 const SizedBox(width: 4),
-                Text(doctor.availability),
+                Text(
+                  doctor.availability,
+                  style: textTheme.bodyMedium,
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.route, size: 18),
                 const SizedBox(width: 4),
-                Text('ETA ~ $etaMinutes min (fastest)'),
+                Text('ETA ~ $etaMinutes min (fastest)', style: textTheme.bodyMedium),
                 const SizedBox(width: 12),
                 if (matchScore != null)
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.green.shade200),
+                      border: Border.all(color: Colors.green.shade300),
                     ),
                     child: Text(
                       'Match ${matchScore!.toStringAsFixed(0)}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ),
               ],
             ),
             if (badges.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               Wrap(
                 spacing: 8,
-                runSpacing: 6,
+                runSpacing: 8,
                 children: badges
                     .map(
                       (badge) => Chip(
-                        label: Text(badge),
+                        label: Text(badge, style: const TextStyle(fontSize: 12)),
                         backgroundColor: Colors.indigo.shade50,
-                        labelStyle: const TextStyle(fontSize: 12),
+                        side: BorderSide(color: Colors.indigo.shade200),
                       ),
                     )
                     .toList(),
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
               Wrap(
                 spacing: 12,
                 runSpacing: 10,
@@ -636,9 +863,10 @@ class _DoctorDetailsCard extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 200,
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: onBook,
-                      child: const Text('Book Appointment'),
+                      icon: const Icon(Icons.calendar_today, size: 18),
+                      label: const Text('Book Appointment'),
                     ),
                   ),
                   IconButton(
