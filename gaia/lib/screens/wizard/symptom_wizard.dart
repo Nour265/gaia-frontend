@@ -595,7 +595,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
                     borderRadius: BorderRadius.circular(12),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                       decoration: BoxDecoration(
                         color: isSelected ? activeColor.withOpacity(0.05) : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(12),
@@ -726,7 +726,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 3,
+                childAspectRatio: 10,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
@@ -808,7 +808,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? activeColor.withOpacity(0.1) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
