@@ -10,6 +10,8 @@ class AuthUser {
     this.phone,
     this.location,
     this.createdAt,
+    this.role,
+    this.isActive,
   });
 
   final int id;
@@ -20,6 +22,8 @@ class AuthUser {
   final String? phone;
   final String? location;
   final String? createdAt;
+  final String? role;
+  final bool? isActive;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -31,8 +35,12 @@ class AuthUser {
       phone: json["phone"] as String?,
       location: json["location"] as String?,
       createdAt: json["created_at"] as String?,
+      role: json["role"] as String?,
+      isActive: json["is_active"] as bool?,
     );
   }
+
+  bool get isAdmin => role == "admin";
 }
 
 class AuthSession {

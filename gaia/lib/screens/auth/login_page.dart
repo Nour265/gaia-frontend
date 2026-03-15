@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
+import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
 
 class LoginPage extends StatefulWidget {
@@ -42,7 +43,14 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.landing);
+      
+      // Redirect based on user role
+      final user = AuthSession.user;
+      if (user != null && user.isAdmin) {
+        Navigator.pushReplacementNamed(context, Routes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, Routes.landing);
+      }
     } catch (error) {
       setState(() {
         _errorMessage = _friendlyError(error);

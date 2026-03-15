@@ -227,6 +227,70 @@ class ApiService {
     }
   }
 
+  // Admin API methods
+  static Future<Map<String, dynamic>> getAdminDashboardSummary() async {
+    final response = await _get(Uri.parse("$baseUrl/admin/dashboard-summary"));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<List<dynamic>> getDoctors() async {
+    final response = await _get(Uri.parse("$baseUrl/admin/doctors"));
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> createDoctor({
+    required String name,
+    required String email,
+    required String password,
+    String? phone,
+    String? location,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/admin/doctors"),
+      body: jsonEncode({
+        "name": name,
+        "email": email,
+        "password": password,
+        if (phone != null && phone.isNotEmpty) "phone": phone,
+        if (location != null && location.isNotEmpty) "location": location,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateDoctorStatus({
+    required int doctorId,
+    required bool isActive,
+  }) async {
+    final response = await _patch(
+      Uri.parse("$baseUrl/admin/doctors/$doctorId/status"),
+      body: jsonEncode({
+        "is_active": isActive,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
   static Exception _buildApiException(String prefix, http.Response response) {
     final status = response.statusCode;
     final body = response.body.trim();
@@ -289,6 +353,19 @@ class ApiService {
   }) {
     return http
         .put(
+          url,
+          headers: _headers(),
+          body: body,
+        )
+        .timeout(_requestTimeout);
+  }
+
+  static Future<http.Response> _patch(
+    Uri url, {
+    Object? body,
+  }) {
+    return http
+        .patch(
           url,
           headers: _headers(),
           body: body,

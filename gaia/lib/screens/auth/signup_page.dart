@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
+import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -81,7 +82,14 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.landing);
+      
+      // Redirect based on user role
+      final user = AuthSession.user;
+      if (user != null && user.isAdmin) {
+        Navigator.pushReplacementNamed(context, Routes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, Routes.landing);
+      }
     } catch (error) {
       setState(() {
         _errorMessage = _friendlyError(error);
@@ -165,7 +173,14 @@ class _SignupPageState extends State<SignupPage> {
       }
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.landing);
+      
+      // Redirect based on user role
+      final user = AuthSession.user;
+      if (user != null && user.isAdmin) {
+        Navigator.pushReplacementNamed(context, Routes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, Routes.landing);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {

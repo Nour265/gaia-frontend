@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 // Each screen is a Widget and represents a page in the app.
 import '../screens/landing/landing_page.dart';
 import '../screens/wizard/symptom_wizard.dart';
-import '../screens/results/results_page.dart';
 import '../screens/about/about_page.dart';
 import '../screens/auth/login_page.dart';
 import '../screens/auth/signup_page.dart';
 import '../screens/auth/forgot_password_page.dart';
 import '../screens/profile/profile_page.dart';
+import '../screens/admin/admin_dashboard_page.dart';
+import '../screens/admin/admin_doctors_page.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
@@ -30,6 +31,10 @@ class Routes {
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String profile = '/profile';
+
+  // Admin routes
+  static const String adminDashboard = '/admin/dashboard';
+  static const String adminDoctors = '/admin/doctors';
 
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
@@ -54,5 +59,9 @@ class Routes {
 
         // When Flutter navigates to '/profile', it builds the ProfilePage widget.
         profile: (_) => const ProfilePage(),
+
+        // Admin routes
+        adminDashboard: (_) => const AdminDashboardPage(),
+        adminDoctors: (_) => const AdminDoctorsPage(),
       };
 }

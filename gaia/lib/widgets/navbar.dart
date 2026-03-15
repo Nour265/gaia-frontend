@@ -92,12 +92,46 @@ class ImageLinks extends StatelessWidget {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (user.isAdmin) ...[
+                _LoginButton(
+                  label: 'Dashboard',
+                  icon: Icons.dashboard_outlined,
+                  textTheme: textTheme,
+                  onPressed: () {
+                    Navigator.pushNamed(context, Routes.adminDashboard);
+                  },
+                ),
+                const SizedBox(width: 12),
+                _LoginButton(
+                  label: 'Doctors',
+                  icon: Icons.medical_services_outlined,
+                  textTheme: textTheme,
+                  onPressed: () {
+                    Navigator.pushNamed(context, Routes.adminDoctors);
+                  },
+                ),
+                const SizedBox(width: 12),
+              ],
               _LoginButton(
                 label: 'Profile',
                 icon: Icons.person_outline,
                 textTheme: textTheme,
                 onPressed: () {
                   Navigator.pushNamed(context, Routes.profile);
+                },
+              ),
+              const SizedBox(width: 12),
+              _LoginButton(
+                label: 'Logout',
+                icon: Icons.logout,
+                textTheme: textTheme,
+                onPressed: () {
+                  AuthSession.clear();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.landing,
+                    (route) => false,
+                  );
                 },
               ),
             ],
