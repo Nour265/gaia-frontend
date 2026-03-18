@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../screens/landing/landing_page.dart';
 import '../screens/wizard/symptom_wizard.dart';
 import '../screens/about/about_page.dart';
+import '../screens/blog/blog_page.dart';
+import '../screens/blog/blog_article_page.dart';
+import '../screens/care_coach/care_coach_page.dart';
 import '../screens/auth/login_page.dart';
 import '../screens/auth/signup_page.dart';
 import '../screens/auth/forgot_password_page.dart';
@@ -27,6 +30,9 @@ class Routes {
 
   // Route name for the about/disclaimer page.
   static const String about = '/about';
+  static const String blog = '/blog';
+  static const String blogArticle = '/blog/article';
+  static const String careCoach = '/care-coach';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
@@ -39,29 +45,38 @@ class Routes {
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
   static Map<String, WidgetBuilder> get map => {
-        // When Flutter navigates to '/', it builds the HomePage widget.
-        landing: (_) => const HomePage(),
+    // When Flutter navigates to '/', it builds the HomePage widget.
+    landing: (_) => const HomePage(),
 
-        // When Flutter navigates to '/wizard', it builds the SymptomWizard widget.
-        wizard: (_) => const SymptomWizard(),
+    // When Flutter navigates to '/wizard', it builds the SymptomWizard widget.
+    wizard: (_) => const SymptomWizard(),
 
-        // When Flutter navigates to '/about', it builds the AboutPage widget.
-        about: (_) => const AboutPage(),
+    // When Flutter navigates to '/about', it builds the AboutPage widget.
+    about: (_) => const AboutPage(),
 
-        // When Flutter navigates to '/login', it builds the LoginPage widget.
-        login: (_) => const LoginPage(),
+    // When Flutter navigates to '/blog', it builds the BlogPage widget.
+    blog: (_) => const BlogPage(),
 
-        // When Flutter navigates to '/signup', it builds the SignupPage widget.
-        signup: (_) => const SignupPage(),
+    // When Flutter navigates to '/blog/article', it builds the BlogArticlePage widget.
+    blogArticle: (_) => const BlogArticlePage(),
 
-        // When Flutter navigates to '/forgot-password', it builds the ForgotPasswordPage widget.
-        forgotPassword: (_) => const ForgotPasswordPage(),
+    // When Flutter navigates to '/care-coach', it builds the CareCoachPage widget.
+    careCoach: (_) => const CareCoachPage(),
 
-        // When Flutter navigates to '/profile', it builds the ProfilePage widget.
-        profile: (_) => const ProfilePage(),
+    // When Flutter navigates to '/login', it builds the LoginPage widget.
+    login: (_) => const LoginPage(),
 
-        // Admin routes
-        adminDashboard: (_) => const AdminDashboardPage(),
-        adminDoctors: (_) => const AdminDoctorsPage(),
-      };
+    // When Flutter navigates to '/signup', it builds the SignupPage widget.
+    signup: (_) => const SignupPage(),
+
+    // When Flutter navigates to '/forgot-password', it builds the ForgotPasswordPage widget.
+    forgotPassword: (_) => const ForgotPasswordPage(),
+
+    // When Flutter navigates to '/profile', it builds the ProfilePage widget.
+    profile: (_) => const ProfilePage(),
+
+    // Admin routes
+    adminDashboard: (_) => const AdminDashboardPage(),
+    adminDoctors: (_) => const AdminDoctorsPage(),
+  };
 }

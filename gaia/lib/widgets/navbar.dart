@@ -4,13 +4,9 @@ import 'package:gaia/values/values.dart';
 import 'package:gaia/services/auth_session.dart';
 
 class NavBar extends StatelessWidget {
-  const NavBar({
-    Key? key,
-    this.showLogin = false,
-  }) : super(key: key);
+  const NavBar({Key? key, this.showLogin = false}) : super(key: key);
 
   final bool showLogin;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -59,18 +55,22 @@ class NavBar extends StatelessWidget {
         const SizedBox(width: 24.0),
         NavItem(label: 'Contact', style: itemStyle, onTap: () {}),
         const SizedBox(width: 24.0),
-        NavItem(label: 'Blog', style: itemStyle, onTap: () {}),
+        NavItem(
+          label: 'Blog',
+          style: itemStyle,
+          onTap: () {
+            Navigator.pushNamed(context, Routes.blog);
+          },
+        ),
         const SizedBox(width: 24.0),
-        NavItem(label: 'Resources', style: itemStyle, onTap: () {}),
+        NavItem(label: 'Symptoms', style: itemStyle, onTap: () {}),
         const SizedBox(width: 24.0),
         NavItem(
-          label: 'More',
+          label: 'Care Coach',
           style: itemStyle,
-          onTap: () {},
-          trailing: const Padding(
-            padding: EdgeInsets.only(bottom: 2.0),
-            child: Icon(Icons.expand_more, size: 20.0),
-          ),
+          onTap: () {
+            Navigator.pushNamed(context, Routes.careCoach);
+          },
         ),
       ],
     );
@@ -78,9 +78,7 @@ class NavBar extends StatelessWidget {
 }
 
 class ImageLinks extends StatelessWidget {
-  const ImageLinks({
-    Key? key,
-  }) : super(key: key);
+  const ImageLinks({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -165,24 +163,36 @@ class ImageLinks extends StatelessWidget {
   }
 }
 
-
-
 class Logo extends StatelessWidget {
-  const Logo({
-    Key? key,
-  }) : super(key: key);
+  const Logo({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final currentRoute = ModalRoute.of(context)?.settings.name;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(ImagePath.logo),
-        const SizedBox(width: 10.0),
-        Text('GAIA', style: textTheme.titleMedium),
-      ],
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (currentRoute == Routes.landing) {
+            return;
+          }
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            Routes.landing,
+            (route) => false,
+          );
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(ImagePath.logo),
+            const SizedBox(width: 10.0),
+            Text('GAIA', style: textTheme.titleMedium),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -211,11 +221,14 @@ class _LoginButtonState extends State<_LoginButton> {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(999);
-    final textColor = _hovered ? AppColors.gray.shade900 : AppColors.gray.shade800;
+    final textColor = _hovered
+        ? AppColors.gray.shade900
+        : AppColors.gray.shade800;
     final iconColor = textColor;
     final fillColor = _hovered ? AppColors.gray.shade100 : Colors.transparent;
-    final borderColor =
-        _hovered ? AppColors.gray.shade300 : AppColors.gray.shade200;
+    final borderColor = _hovered
+        ? AppColors.gray.shade300
+        : AppColors.gray.shade200;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -240,13 +253,14 @@ class _LoginButtonState extends State<_LoginButton> {
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 160),
                 curve: Curves.easeOut,
-                style: (widget.textTheme.labelLarge ??
-                        const TextStyle(fontSize: 12))
-                    .copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                ),
+                style:
+                    (widget.textTheme.labelLarge ??
+                            const TextStyle(fontSize: 12))
+                        .copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
                 child: Text(widget.label),
               ),
             ],
@@ -301,7 +315,7 @@ class _NavItemState extends State<NavItem> {
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOut,
           transform: _hovered
-              ? (Matrix4.identity()..translate(0.0, -1.5))
+              ? (Matrix4.identity()..translateByDouble(0.0, -1.5, 0.0, 1.0))
               : Matrix4.identity(),
           child: Stack(
             clipBehavior: Clip.none,
