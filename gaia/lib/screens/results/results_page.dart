@@ -6,6 +6,7 @@ import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 import 'package:latlong2/latlong.dart';
 
 
@@ -98,18 +99,42 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Assessment Results',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 2,
+      appBar: const PreferredSize(
+        preferredSize: Size.fromHeight(80),
+        child: NavBar(),
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Go back',
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'Assessment Results',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 48), // Balance the back button on the right
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<Map<String, dynamic>>(
         future: _predictionFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -227,22 +252,6 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                                           letterSpacing: 0.5,
                                         ),
                                       ),
-                                      const SizedBox(height: 12),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withAlpha(200),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          'Confidence: ${((data['top_3_predictions'][0] as Map)['probability'] * 100).toStringAsFixed(1)}%',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.purple,
-                                          ),
-                                        ),
-                                      ),
                                     ],
                                   ),
                                 ),
@@ -262,17 +271,26 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                                 (data['top_3_predictions'] as List).length,
                                 (index) {
                                   final prediction = (data['top_3_predictions'] as List)[index] as Map;
-                                  final percentage = (prediction['probability'] as num) * 100;
-                                  final colors = [AppColors.turquoise, AppColors.orange, AppColors.pink];
-                                  final color = colors[index % colors.length];
+                                  final purpleShades = [
+                                    Colors.purple.shade700,
+                                    Colors.purple.shade600,
+                                    Colors.purple.shade400,
+                                  ];
+                                  final bgShades = [
+                                    Colors.purple.shade100,
+                                    Colors.purple.shade200,
+                                    Colors.purple.shade200,
+                                  ];
+                                  final borderColor = purpleShades[index % purpleShades.length];
+                                  final bgColor = bgShades[index % bgShades.length];
                                   
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: color[100],
+                                        color: bgColor,
                                         borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: color[800]!, width: 1.5),
+                                        border: Border.all(color: borderColor, width: 1.5),
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -291,21 +309,6 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                                                     ),
                                                   ),
                                                 ],
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: color[800]!.withAlpha(100),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                '${percentage.toStringAsFixed(1)}%',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 13,
-                                                  color: color[800],
-                                                ),
                                               ),
                                             ),
                                           ],
@@ -360,22 +363,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                             color: AppColors.purple,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: AppColors.purple[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.purple[800]!, width: 1.5),
-                          ),
-                          child: Text(
-                            data['explanation'],
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              height: 1.6,
-                              color: AppColors.gray[900],
-                            ),
-                          ),
-                        ),
+                        
                         const SizedBox(height: 24),
                         // Recommendation
                         Container(
@@ -554,6 +542,9 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             );
           }
         },
+            ),
+          ),
+        ],
       ),
     );
   }

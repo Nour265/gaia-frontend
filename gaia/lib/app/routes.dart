@@ -14,6 +14,7 @@ import '../screens/auth/forgot_password_page.dart';
 import '../screens/profile/profile_page.dart';
 import '../screens/admin/admin_dashboard_page.dart';
 import '../screens/admin/admin_doctors_page.dart';
+import '../screens/Information/info.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
@@ -27,6 +28,9 @@ class Routes {
 
   // Route name for the results screen.
   static const String results = '/results';
+
+  // Route name for the diseases and symptoms page.
+  static const String symptoms = '/symptoms';
 
   // Route name for the about/disclaimer page.
   static const String about = '/about';
@@ -50,6 +54,9 @@ class Routes {
 
     // When Flutter navigates to '/wizard', it builds the SymptomWizard widget.
     wizard: (_) => const SymptomWizard(),
+
+    // When Flutter navigates to '/symptoms', it builds the DiseasesAndSymptomsPage widget.
+    symptoms: (_) => const DiseasesAndSymptomsPage(),
 
     // When Flutter navigates to '/about', it builds the AboutPage widget.
     about: (_) => const AboutPage(),
