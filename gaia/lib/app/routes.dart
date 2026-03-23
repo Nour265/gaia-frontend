@@ -7,7 +7,7 @@ import '../screens/wizard/symptom_wizard.dart';
 import '../screens/about/about_page.dart';
 import '../screens/blog/blog_page.dart';
 import '../screens/blog/blog_article_page.dart';
-import '../screens/care_coach/care_coach_page.dart';
+import '../screens/health_tracking/health_tracking_page.dart';
 import '../screens/auth/login_page.dart';
 import '../screens/auth/signup_page.dart';
 import '../screens/auth/forgot_password_page.dart';
@@ -32,7 +32,7 @@ class Routes {
   static const String about = '/about';
   static const String blog = '/blog';
   static const String blogArticle = '/blog/article';
-  static const String careCoach = '/care-coach';
+  static const String healthTracking = '/health-tracking';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
@@ -60,8 +60,8 @@ class Routes {
     // When Flutter navigates to '/blog/article', it builds the BlogArticlePage widget.
     blogArticle: (_) => const BlogArticlePage(),
 
-    // When Flutter navigates to '/care-coach', it builds the CareCoachPage widget.
-    careCoach: (_) => const CareCoachPage(),
+    // When Flutter navigates to '/health-tracking', it builds the HealthTrackingPage widget.
+    healthTracking: (_) => const HealthTrackingPage(),
 
     // When Flutter navigates to '/login', it builds the LoginPage widget.
     login: (_) => const LoginPage(),

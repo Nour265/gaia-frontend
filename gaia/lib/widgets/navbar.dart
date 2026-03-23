@@ -66,10 +66,10 @@ class NavBar extends StatelessWidget {
         NavItem(label: 'Symptoms', style: itemStyle, onTap: () {}),
         const SizedBox(width: 24.0),
         NavItem(
-          label: 'Care Coach',
+          label: 'Health Tracking',
           style: itemStyle,
           onTap: () {
-            Navigator.pushNamed(context, Routes.careCoach);
+            Navigator.pushNamed(context, Routes.healthTracking);
           },
         ),
       ],
