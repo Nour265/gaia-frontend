@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
@@ -52,42 +53,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
     final isWeb = size.width > 800;
 
     return Scaffold(
       backgroundColor: AppColors.gray.shade100,
-      appBar: AppBar(
-        title: Text('Admin Dashboard', style: textTheme.headlineSmall),
-        backgroundColor: AppColors.white,
-        elevation: 1,
-        foregroundColor: AppColors.gray.shade900,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.adminDoctors);
-              },
-              icon: const Icon(Icons.medical_services_outlined),
-              label: const Text('Manage Doctors'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.turquoise,
-                foregroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorState()
-              : _buildDashboardContent(isWeb),
+          ? _buildErrorState()
+          : _buildDashboardContent(isWeb),
     );
   }
 
@@ -96,11 +72,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppColors.gray.shade700,
-          ),
+          Icon(Icons.error_outline, size: 64, color: AppColors.gray.shade700),
           const SizedBox(height: 16),
           Text(
             _errorMessage!,
@@ -134,9 +106,30 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Dashboard Overview',
-            style: Theme.of(context).textTheme.headlineMedium,
+          Wrap(
+            runSpacing: 12,
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Admin Dashboard',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, Routes.adminDoctors);
+                },
+                icon: const Icon(Icons.medical_services_outlined),
+                label: const Text('Manage Doctors'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.turquoise,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           _buildStatsGrid(
@@ -217,11 +210,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 color: stat.color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Icon(
-                stat.icon,
-                color: stat.color,
-                size: 24,
-              ),
+              child: Icon(stat.icon, color: stat.color, size: 24),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,16 +218,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Text(
                   stat.value,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.gray.shade900,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray.shade900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   stat.title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.gray.shade700,
-                      ),
+                    color: AppColors.gray.shade700,
+                  ),
                 ),
               ],
             ),

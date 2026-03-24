@@ -142,7 +142,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Sudden onset (minutes)': 'sharp chest pain',
   'Gradual over hours or days': 'chest tightness',
   'Recurring episodes': 'palpitations',
-  
+
   // Respiratory symptoms
   'Persistent cough': 'cough',
   'Difficulty breathing or wheezing': 'difficulty breathing',
@@ -165,7 +165,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Fatigue or body aches': 'fatigue',
   'No fever or systemic symptoms': 'cough',
   'Triggered by allergens or animals': 'allergic reaction',
-  
+
   // Fever & Systemic
   'High fever (38-40°C / 100-104°F)': 'fever',
   'Low-grade fever (37-38°C / 98-100°F)': 'fever',
@@ -182,7 +182,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Moderate - limited activities': 'fatigue',
   'Severe - bedridden': 'fatigue',
   'With confusion or altered mental status': 'disturbance of memory',
-  
+
   // GI symptoms
   'Sharp/acute abdominal pain': 'sharp abdominal pain',
   'Cramping or spasms': 'cramps and spasms',
@@ -212,7 +212,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Jaundice (yellowing)': 'jaundice',
   'Heartburn or acid reflux': 'heartburn',
   'Recent antibiotics or medication': 'diarrhea',
-  
+
   // Neurological
   'Severe headache (frontal or generalized)': 'frontal headache',
   'Migraines or throbbing pain': 'headache',
@@ -238,7 +238,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Progressive over weeks/months': 'headache',
   'Recurring pattern': 'headache',
   'First time experiencing this': 'dizziness',
-  
+
   // Pain & Musculoskeletal
   'Back pain (lower or upper)': 'back pain',
   'Neck pain or stiffness': 'neck pain',
@@ -261,7 +261,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Gradually over time': 'back pain',
   'Repetitive strain (occupation)': 'wrist pain',
   'Sudden without cause': 'back pain',
-  
+
   // Urinary
   'Frequent urination (many times daily)': 'frequent urination',
   'Urgency - sudden need to urinate': 'painful urination',
@@ -276,7 +276,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Urgency at night (nocturia)': 'excessive urination at night',
   'Back or flank pain': 'back pain',
   'Recent unprotected sexual contact': 'painful urination',
-  
+
   // Gynecological
   'Painful menstruation': 'idiopathic painful menstruation',
   'Heavy or long menstrual periods': 'long menstrual periods',
@@ -294,7 +294,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Pelvic pain or discomfort': 'pelvic pain',
   'Pain during intercourse': 'pain during intercourse',
   'Infertility concerns': 'infertility',
-  
+
   // Skin
   'Rash with redness and itching': 'skin rash',
   'Dry, flaky, or scaly skin': 'skin dryness, peeling, scaliness, or roughness',
@@ -317,7 +317,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Signs of infection (pus, warmth)': 'skin rash',
   'Recently infected or scabbing': 'skin rash',
   'Affecting joints (psoriasis sign)': 'joint pain',
-  
+
   // ENT
   'Sore throat or difficulty swallowing': 'sore throat',
   'Earache or ear pain': 'ear pain',
@@ -338,7 +338,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Nosebleed': 'nosebleed',
   'Sinus drainage': 'sinus congestion',
   'Persistent cough from drainage': 'cough',
-  
+
   // Psychiatric
   'Persistent sadness (depression)': 'depression',
   'Excessive worry or anxiety': 'anxiety and nervousness',
@@ -362,7 +362,7 @@ final Map<String, String> SYMPTOM_MAPPING = {
   'Triggered by specific events': 'anxiety and nervousness',
   'No clear trigger': 'depression',
   'Progressive worsening': 'depression',
-  
+
   // Other & finishing
   'Hair, scalp, or nail issues': 'irregular appearing nails',
   'Hearing loss or balance problems': 'diminished hearing',
@@ -386,12 +386,13 @@ final Map<String, String> SYMPTOM_MAPPING = {
 class _SymptomWizardState extends State<SymptomWizard> {
   // Multi-select symptom collection
   final Set<String> _selectedSymptoms = {};
-  
+
   // Wizard phases
   bool _inScreeningPhase = true;
   int _currentStep = 0;
-  Set<String> _selectedCategoryScreens = {}; // Categories selected during screening
-  
+  Set<String> _selectedCategoryScreens =
+      {}; // Categories selected during screening
+
   // User data for assessment
   int age = 30; // TODO: Collect from user
   String gender = 'male'; // TODO: Collect from user
@@ -399,15 +400,32 @@ class _SymptomWizardState extends State<SymptomWizard> {
   // General screening questions (yes/no to narrow down)
   final List<Map<String, String>> _screeningQuestions = [
     {'question': 'Do you have fever or chills?', 'category': 'systemic'},
-    {'question': 'Any respiratory issues (cough, difficulty breathing, sore throat)?', 'category': 'respiratory'},
-    {'question': 'Any chest pain or heart palpitations?', 'category': 'cardiac'},
-    {'question': 'Any abdominal pain, nausea, or digestive issues?', 'category': 'abdominal'},
+    {
+      'question':
+          'Any respiratory issues (cough, difficulty breathing, sore throat)?',
+      'category': 'respiratory',
+    },
+    {
+      'question': 'Any chest pain or heart palpitations?',
+      'category': 'cardiac',
+    },
+    {
+      'question': 'Any abdominal pain, nausea, or digestive issues?',
+      'category': 'abdominal',
+    },
     {'question': 'Any pain (back, neck, joints, limbs)?', 'category': 'pain'},
-    {'question': 'Any neurological symptoms (headache, dizziness, memory issues)?', 'category': 'neurological'},
+    {
+      'question':
+          'Any neurological symptoms (headache, dizziness, memory issues)?',
+      'category': 'neurological',
+    },
     {'question': 'Any skin rash, lesions, or irritation?', 'category': 'skin'},
     {'question': 'Any ear, nose, or throat symptoms?', 'category': 'ent'},
     {'question': 'Any urinary or bladder issues?', 'category': 'urinary'},
-    {'question': 'Any gynecological symptoms (women only)?', 'category': 'gynecological'},
+    {
+      'question': 'Any gynecological symptoms (women only)?',
+      'category': 'gynecological',
+    },
   ];
 
   // Symptom categories (shown in priority order after screening)
@@ -426,8 +444,12 @@ class _SymptomWizardState extends State<SymptomWizard> {
 
   List<String> get _prioritizedCategories {
     // Put selected categories first, then the rest
-    final selected = _allCategories.where((c) => _selectedCategoryScreens.contains(c)).toList();
-    final unselected = _allCategories.where((c) => !_selectedCategoryScreens.contains(c)).toList();
+    final selected = _allCategories
+        .where((c) => _selectedCategoryScreens.contains(c))
+        .toList();
+    final unselected = _allCategories
+        .where((c) => !_selectedCategoryScreens.contains(c))
+        .toList();
     return [...selected, ...unselected];
   }
 
@@ -499,7 +521,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
 
   Map<String, String> _getCategoryInfo() {
     final category = _prioritizedCategories[_currentStep];
-    
+
     final categoryNames = {
       'abdominal': 'Abdominal & Digestive',
       'respiratory': 'Respiratory & Breathing',
@@ -512,10 +534,12 @@ class _SymptomWizardState extends State<SymptomWizard> {
       'urinary': 'Urinary & Urogenital',
       'gynecological': 'Gynecological',
     };
-    
+
     final categoryDescriptions = {
-      'abdominal': 'Select all symptoms related to your abdomen, stomach, and digestion:',
-      'respiratory': 'Select all symptoms related to breathing and your respiratory system:',
+      'abdominal':
+          'Select all symptoms related to your abdomen, stomach, and digestion:',
+      'respiratory':
+          'Select all symptoms related to breathing and your respiratory system:',
       'cardiac': 'Select all symptoms related to your heart and chest:',
       'pain': 'Select all pain and joint-related symptoms you experience:',
       'systemic': 'Select general systemic symptoms:',
@@ -540,10 +564,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F9FF),
-      appBar: const PreferredSize(
-        preferredSize: Size.fromHeight(80),
-        child: NavBar(),
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -562,7 +583,9 @@ class _SymptomWizardState extends State<SymptomWizard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +610,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
                 final q = _screeningQuestions[index];
                 final category = q['category']!;
                 final isSelected = _selectedCategoryScreens.contains(category);
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: InkWell(
@@ -595,20 +618,31 @@ class _SymptomWizardState extends State<SymptomWizard> {
                     borderRadius: BorderRadius.circular(12),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? activeColor.withOpacity(0.05) : const Color(0xFFF8FAFC),
+                        color: isSelected
+                            ? activeColor.withOpacity(0.05)
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? activeColor : Colors.grey.shade200,
+                          color: isSelected
+                              ? activeColor
+                              : Colors.grey.shade200,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                            color: isSelected ? activeColor : Colors.grey.shade400,
+                            isSelected
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            color: isSelected
+                                ? activeColor
+                                : Colors.grey.shade400,
                           ),
                           const SizedBox(width: 16),
                           Flexible(
@@ -617,8 +651,12 @@ class _SymptomWizardState extends State<SymptomWizard> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: isSelected ? activeColor : const Color(0xFF0F172A),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected
+                                    ? activeColor
+                                    : const Color(0xFF0F172A),
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           ),
@@ -642,12 +680,16 @@ class _SymptomWizardState extends State<SymptomWizard> {
           const SizedBox(height: 16),
 
           ElevatedButton(
-            onPressed: _selectedCategoryScreens.isNotEmpty ? _finishScreening : null,
+            onPressed: _selectedCategoryScreens.isNotEmpty
+                ? _finishScreening
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: activeColor,
               disabledBackgroundColor: Colors.grey.shade200,
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
             child: Container(
@@ -656,7 +698,9 @@ class _SymptomWizardState extends State<SymptomWizard> {
               child: Text(
                 'Continue to Detailed Symptoms →',
                 style: TextStyle(
-                  color: _selectedCategoryScreens.isNotEmpty ? Colors.white : Colors.grey.shade500,
+                  color: _selectedCategoryScreens.isNotEmpty
+                      ? Colors.white
+                      : Colors.grey.shade500,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -679,7 +723,9 @@ class _SymptomWizardState extends State<SymptomWizard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,7 +749,11 @@ class _SymptomWizardState extends State<SymptomWizard> {
               ),
               child: const Text(
                 '★ High Priority (from screening)',
-                style: TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
 
@@ -734,7 +784,12 @@ class _SymptomWizardState extends State<SymptomWizard> {
               itemBuilder: (context, index) {
                 final symptom = symptoms[index];
                 final isSelected = _selectedSymptoms.contains(symptom);
-                return _buildSymptomTile(symptom, isSelected, activeColor, theme);
+                return _buildSymptomTile(
+                  symptom,
+                  isSelected,
+                  activeColor,
+                  theme,
+                );
               },
             ),
           ),
@@ -758,9 +813,14 @@ class _SymptomWizardState extends State<SymptomWizard> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("← Back to Screening", style: TextStyle(color: Colors.black54)),
+                  child: const Text(
+                    "← Back to Screening",
+                    style: TextStyle(color: Colors.black54),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -770,9 +830,14 @@ class _SymptomWizardState extends State<SymptomWizard> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("← Previous", style: TextStyle(color: Colors.black54)),
+                  child: const Text(
+                    "← Previous",
+                    style: TextStyle(color: Colors.black54),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -783,11 +848,15 @@ class _SymptomWizardState extends State<SymptomWizard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: activeColor,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 0,
                   ),
                   child: Text(
-                    _currentStep == _prioritizedCategories.length - 1 ? 'Get Results →' : 'Next →',
+                    _currentStep == _prioritizedCategories.length - 1
+                        ? 'Get Results →'
+                        : 'Next →',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -802,7 +871,12 @@ class _SymptomWizardState extends State<SymptomWizard> {
     );
   }
 
-  Widget _buildSymptomTile(String symptom, bool isSelected, Color activeColor, ThemeData theme) {
+  Widget _buildSymptomTile(
+    String symptom,
+    bool isSelected,
+    Color activeColor,
+    ThemeData theme,
+  ) {
     return InkWell(
       onTap: () => _toggleSymptom(symptom),
       borderRadius: BorderRadius.circular(12),
@@ -810,7 +884,9 @@ class _SymptomWizardState extends State<SymptomWizard> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withOpacity(0.1) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? activeColor.withOpacity(0.1)
+              : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? activeColor : Colors.grey.shade200,

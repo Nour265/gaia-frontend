@@ -9,24 +9,12 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     final textTheme = Theme.of(context).textTheme;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: AppColors.white,
-      extendBodyBehindAppBar: false,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(72.0),
-        child: Container(
-          color: AppColors.white,
-          child: Center(
-            child: SizedBox(
-              width: size.width * 0.7,
-              child: const NavBar(),
-            ),
-          ),
-        ),
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -43,20 +31,13 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHero(
-    BuildContext context,
-    Size size,
-    TextTheme textTheme,
-  ) {
+  Widget _buildHero(BuildContext context, Size size, TextTheme textTheme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 84),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.white,
-            AppColors.gray.shade100,
-          ],
+          colors: [AppColors.white, AppColors.gray.shade100],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -166,10 +147,7 @@ class AboutPage extends StatelessWidget {
                               height: 46,
                               child: OutlinedButton(
                                 onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    Routes.landing,
-                                  );
+                                  Navigator.pushNamed(context, Routes.landing);
                                 },
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.gray.shade900,
@@ -370,10 +348,7 @@ class AboutPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 72),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.gray.shade100,
-            AppColors.white,
-          ],
+          colors: [AppColors.gray.shade100, AppColors.white],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -461,8 +436,7 @@ class AboutPage extends StatelessWidget {
                   _infoCard(
                     textTheme,
                     title: 'Transparent guidance',
-                    body:
-                        'We explain next steps so you can act confidently.',
+                    body: 'We explain next steps so you can act confidently.',
                   ),
                 ],
               ),
@@ -814,13 +788,7 @@ class AboutPage extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        boxShadow: [
-          BoxShadow(
-            color: color,
-            blurRadius: 60,
-            spreadRadius: 10,
-          ),
-        ],
+        boxShadow: [BoxShadow(color: color, blurRadius: 60, spreadRadius: 10)],
       ),
     );
   }
@@ -841,16 +809,20 @@ class _FaqItem extends StatefulWidget {
   State<_FaqItem> createState() => _FaqItemState();
 }
 
-class _FaqItemState extends State<_FaqItem> with SingleTickerProviderStateMixin {
+class _FaqItemState extends State<_FaqItem>
+    with SingleTickerProviderStateMixin {
   bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = widget.textTheme.titleSmall ??
+    final titleStyle =
+        widget.textTheme.titleSmall ??
         const TextStyle(fontSize: 16, fontWeight: FontWeight.w700);
-    final labelStyle = widget.textTheme.labelLarge ??
+    final labelStyle =
+        widget.textTheme.labelLarge ??
         const TextStyle(fontSize: 12, fontWeight: FontWeight.w700);
-    final bodyStyle = widget.textTheme.bodyMedium ??
+    final bodyStyle =
+        widget.textTheme.bodyMedium ??
         const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
 
     return Container(

@@ -13,23 +13,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: AppColors.white,
-      extendBodyBehindAppBar: false, // IMPORTANT
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(72.0),
-        child: Container(
-          color: AppColors.white, // keeps it white and non-overlapping
-          child: Center(
-            child: SizedBox(
-              width: size.width * 0.7,
-              child: const NavBar(showLogin: true),
-            ),
-          ),
-        ),
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -18,18 +18,7 @@ class BlogPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(72.0),
-        child: Container(
-          color: AppColors.white,
-          child: Center(
-            child: SizedBox(
-              width: size.width * 0.7,
-              child: const NavBar(showLogin: true),
-            ),
-          ),
-        ),
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

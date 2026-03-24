@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({Key? key}) : super(key: key);
@@ -126,15 +127,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      appBar: const GaiaNavBarAppBar(),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFFEFF7FF),
-                  Color(0xFFF7F3FF),
-                ],
+                colors: [Color(0xFFEFF7FF), Color(0xFFF7F3FF)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -323,11 +322,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                         strokeWidth: 2.4,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          AppColors.white,
-                                        ),
+                                              AppColors.white,
+                                            ),
                                       ),
                                     )
-                                  : Text(_codeSent ? "Reset Password" : "Send Code"),
+                                  : Text(
+                                      _codeSent
+                                          ? "Reset Password"
+                                          : "Send Code",
+                                    ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -381,10 +384,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }

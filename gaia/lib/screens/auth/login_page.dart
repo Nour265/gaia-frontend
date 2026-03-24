@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -12,6 +17,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static const String _googleClientId = String.fromEnvironment(
+    "GAIA_GOOGLE_CLIENT_ID",
+    defaultValue:
+        "466714216329-edlr37blfk69r93n2qa7pqs8b42s5a4l.apps.googleusercontent.com",
+  );
+  static const String _googleServerClientId = String.fromEnvironment(
+    "GAIA_GOOGLE_SERVER_CLIENT_ID",
+  );
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -41,16 +55,7 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      if (!mounted) return;
-      
-      // Redirect based on user role
-      final user = AuthSession.user;
-      if (user != null && user.isAdmin) {
-        Navigator.pushReplacementNamed(context, Routes.adminDashboard);
-      } else {
-        Navigator.pushReplacementNamed(context, Routes.landing);
-      }
+      _redirectAfterAuth();
     } catch (error) {
       setState(() {
         _errorMessage = _friendlyError(error);
@@ -64,8 +69,100 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (kIsWeb && _googleClientId.isEmpty) {
+        throw Exception(
+          "Google Web client ID is missing. Run with --dart-define=GAIA_GOOGLE_CLIENT_ID=<your_web_client_id>.",
+        );
+      }
+
+      final googleSignIn = GoogleSignIn(
+        scopes: const ["email", "profile", "openid"],
+        clientId: _googleClientId.isEmpty ? null : _googleClientId,
+        serverClientId: _googleServerClientId.isEmpty
+            ? null
+            : _googleServerClientId,
+      );
+
+      final account = await googleSignIn.signIn().timeout(
+        const Duration(seconds: 60),
+      );
+
+      if (account == null) {
+        throw Exception("Google sign-in was canceled.");
+      }
+
+      final auth = await account.authentication.timeout(
+        const Duration(seconds: 20),
+      );
+      final idToken = auth.idToken;
+      final accessToken = auth.accessToken;
+
+      if (idToken != null && idToken.isNotEmpty) {
+        await ApiService.authenticateWithGoogle(idToken: idToken);
+      } else if (accessToken != null && accessToken.isNotEmpty) {
+        await ApiService.authenticateWithGoogleAccessToken(
+          accessToken: accessToken,
+        );
+      } else {
+        throw Exception("Google id and access tokens are missing.");
+      }
+
+      _redirectAfterAuth();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _redirectAfterAuth() {
+    if (!mounted) return;
+    final user = AuthSession.user;
+    if (user != null && user.isAdmin) {
+      Navigator.pushReplacementNamed(context, Routes.adminDashboard);
+    } else {
+      Navigator.pushReplacementNamed(context, Routes.landing);
+    }
+  }
+
   String _friendlyError(Object error) {
     final message = error.toString();
+
+    if (message.contains("Google sign-in was canceled")) {
+      return "Google sign-in was canceled.";
+    }
+    if (message.contains("popup_closed")) {
+      return "Google sign-in popup was closed.";
+    }
+    if (message.contains("popup_blocked")) {
+      return "Allow popups for this site to continue with Google sign-in.";
+    }
+    if (message.contains("idpiframe_initialization_failed")) {
+      return "Google sign-in is blocked by browser privacy settings.";
+    }
+    if (message.contains("Invalid Google token") ||
+        message.contains("Google client id is not allowed")) {
+      return "Google sign-in failed. Check OAuth client IDs.";
+    }
+    if (message.contains("TimeoutException")) {
+      return "Request timed out. Check your backend connection and try again.";
+    }
     if (message.contains("401")) {
       return "Invalid email or password.";
     }
@@ -81,15 +178,13 @@ class _LoginPageState extends State<LoginPage> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      appBar: const GaiaNavBarAppBar(),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFFF6F0FF),
-                  Color(0xFFE8FBFF),
-                ],
+                colors: [Color(0xFFF6F0FF), Color(0xFFE8FBFF)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -238,11 +333,29 @@ class _LoginPageState extends State<LoginPage> {
                                         strokeWidth: 2.4,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          AppColors.white,
-                                        ),
+                                              AppColors.white,
+                                            ),
                                       ),
                                     )
                                   : const Text("Sign In"),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          SizedBox(
+                            height: 52,
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _signInWithGoogle,
+                              icon: _googleMark(),
+                              label: const Text("Continue with Google"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.gray.shade900,
+                                side: BorderSide(
+                                  color: AppColors.gray.shade300,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -293,9 +406,22 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       width: size,
       height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    );
+  }
+
+  Widget _googleMark() {
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        "G",
+        style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF4285F4)),
       ),
     );
   }

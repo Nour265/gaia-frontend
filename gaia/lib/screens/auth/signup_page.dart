@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class SignupPage extends StatefulWidget {
@@ -31,13 +34,37 @@ class _SignupPageState extends State<SignupPage> {
   final _confirmController = TextEditingController();
   final _ageController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _locationController = TextEditingController();
   String? _gender;
+  String? _preciseLocation;
+  bool _isLocating = false;
   final List<String> _genders = const ["male", "female", "other"];
   bool _isLoading = false;
+  bool _hasPromptedForLocation = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   String? _errorMessage;
+
+  bool get _supportsGeolocator {
+    if (kIsWeb) return true;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return true;
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return false;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _promptForPreciseLocation();
+    });
+  }
 
   @override
   void dispose() {
@@ -47,8 +74,95 @@ class _SignupPageState extends State<SignupPage> {
     _confirmController.dispose();
     _ageController.dispose();
     _phoneController.dispose();
-    _locationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _promptForPreciseLocation() async {
+    if (!mounted || _hasPromptedForLocation || _preciseLocation != null) return;
+    _hasPromptedForLocation = true;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Allow precise location?"),
+        content: const Text(
+          "GAIA uses your exact location to show nearby doctors on the results map.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Not now"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _capturePreciseLocation();
+            },
+            child: const Text("Allow"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _capturePreciseLocation() async {
+    if (_isLocating) return;
+
+    setState(() {
+      _isLocating = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (!_supportsGeolocator) {
+        throw Exception("Precise location is not supported on this platform.");
+      }
+
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception("Location services are disabled on your device.");
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied) {
+        throw Exception("Location permission was denied.");
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(
+          "Location permission is permanently denied. Enable it in browser or device settings.",
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+      setState(() {
+        _preciseLocation =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+      });
+    } on MissingPluginException {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage =
+            "Location plugin is unavailable in this runtime. Please fully restart the app.";
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -66,6 +180,10 @@ class _SignupPageState extends State<SignupPage> {
       if (parsedAge == null) {
         throw Exception("Invalid age");
       }
+      final location = _preciseLocation;
+      if (location == null) {
+        throw Exception("Please allow location access to continue.");
+      }
 
       await ApiService.signup(
         name: _nameController.text.trim(),
@@ -76,13 +194,11 @@ class _SignupPageState extends State<SignupPage> {
         phone: _phoneController.text.trim().isEmpty
             ? null
             : _phoneController.text.trim(),
-        location: _locationController.text.trim().isEmpty
-            ? null
-            : _locationController.text.trim(),
+        location: location,
       );
 
       if (!mounted) return;
-      
+
       // Redirect based on user role
       final user = AuthSession.user;
       if (user != null && user.isAdmin) {
@@ -126,9 +242,9 @@ class _SignupPageState extends State<SignupPage> {
             : _googleServerClientId,
       );
 
-      final account = await googleSignIn
-          .signIn()
-          .timeout(const Duration(seconds: 60));
+      final account = await googleSignIn.signIn().timeout(
+        const Duration(seconds: 60),
+      );
       if (account == null) {
         throw Exception("Google sign-in was canceled.");
       }
@@ -148,9 +264,10 @@ class _SignupPageState extends State<SignupPage> {
       final phone = _phoneController.text.trim().isEmpty
           ? null
           : _phoneController.text.trim();
-      final location = _locationController.text.trim().isEmpty
-          ? null
-          : _locationController.text.trim();
+      final location = _preciseLocation;
+      if (location == null) {
+        throw Exception("Please allow location access to continue.");
+      }
 
       if (idToken != null && idToken.isNotEmpty) {
         await ApiService.authenticateWithGoogle(
@@ -173,7 +290,7 @@ class _SignupPageState extends State<SignupPage> {
       }
 
       if (!mounted) return;
-      
+
       // Redirect based on user role
       final user = AuthSession.user;
       if (user != null && user.isAdmin) {
@@ -228,6 +345,22 @@ class _SignupPageState extends State<SignupPage> {
     if (message.contains("409")) {
       return "Email already registered. Try logging in.";
     }
+    if (message.contains("Location is required") ||
+        message.contains("Please allow location access")) {
+      return "Allow precise location access so we can show nearby doctors.";
+    }
+    if (message.contains("Precise location is not supported")) {
+      return "Precise location is not supported on this platform.";
+    }
+    if (message.contains("Location services are disabled")) {
+      return "Please enable location services on your device/browser.";
+    }
+    if (message.contains("deniedForever")) {
+      return "Location permission is blocked. Enable it in browser settings.";
+    }
+    if (message.contains("permission was denied")) {
+      return "Location permission is required for nearby doctor matching.";
+    }
     if (message.contains("Invalid age")) {
       return "Please provide a valid age.";
     }
@@ -277,15 +410,13 @@ class _SignupPageState extends State<SignupPage> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      appBar: const GaiaNavBarAppBar(),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFF4E6),
-                  Color(0xFFF1ECFF),
-                ],
+                colors: [Color(0xFFFFF4E6), Color(0xFFF1ECFF)],
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
               ),
@@ -396,7 +527,7 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           DropdownButtonFormField<String>(
-                            value: _gender,
+                            initialValue: _gender,
                             decoration: _inputDecoration(
                               label: "Sex",
                               icon: Icons.wc_outlined,
@@ -494,11 +625,71 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          TextFormField(
-                            controller: _locationController,
-                            decoration: _inputDecoration(
-                              label: "Location (optional)",
-                              icon: Icons.location_on_outlined,
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColors.gray.shade100,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
+                                color: AppColors.gray.shade200,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.my_location_outlined,
+                                      size: 18,
+                                      color: AppColors.gray.shade800,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      "Precise location",
+                                      style: textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  _preciseLocation == null
+                                      ? "Allow location access to show doctors exactly around you."
+                                      : "Captured: $_preciseLocation",
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.gray.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                SizedBox(
+                                  height: 44,
+                                  child: OutlinedButton.icon(
+                                    onPressed: (_isLoading || _isLocating)
+                                        ? null
+                                        : _capturePreciseLocation,
+                                    icon: _isLocating
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.gps_fixed_rounded,
+                                            size: 16,
+                                          ),
+                                    label: Text(
+                                      _preciseLocation == null
+                                          ? "Use My Current Location"
+                                          : "Refresh Location",
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -531,8 +722,8 @@ class _SignupPageState extends State<SignupPage> {
                                         strokeWidth: 2.4,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          AppColors.white,
-                                        ),
+                                              AppColors.white,
+                                            ),
                                       ),
                                     )
                                   : const Text("Create Account"),
@@ -547,7 +738,9 @@ class _SignupPageState extends State<SignupPage> {
                               label: const Text("Sign up with Google"),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.gray.shade900,
-                                side: BorderSide(color: AppColors.gray.shade300),
+                                side: BorderSide(
+                                  color: AppColors.gray.shade300,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -605,10 +798,7 @@ class _SignupPageState extends State<SignupPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -623,10 +813,7 @@ class _SignupPageState extends State<SignupPage> {
       ),
       child: const Text(
         "G",
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF4285F4),
-        ),
+        style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF4285F4)),
       ),
     );
   }

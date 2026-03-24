@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gaia/models/health_metric.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 
 class HealthTrackingPage extends StatefulWidget {
   const HealthTrackingPage({Key? key}) : super(key: key);
@@ -162,7 +163,8 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
 
     try {
       await Future<void>.delayed(const Duration(milliseconds: 250));
-      final generated = _generateMockData()..sort((a, b) => b.date.compareTo(a.date));
+      final generated = _generateMockData()
+        ..sort((a, b) => b.date.compareTo(a.date));
       setState(() {
         _metrics = generated;
         _isLoading = false;
@@ -259,15 +261,23 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
 
     switch (type) {
       case 'sleep':
-        return value < 6.5 ? 'Late night, trying to recover.' : 'Slept better than usual.';
+        return value < 6.5
+            ? 'Late night, trying to recover.'
+            : 'Slept better than usual.';
       case 'exercise':
-        return value > 60 ? 'Strength + cardio session.' : 'Light movement day.';
+        return value > 60
+            ? 'Strength + cardio session.'
+            : 'Light movement day.';
       case 'mood':
         return value < 5.5 ? 'Stressful workday.' : 'Felt focused and calm.';
       case 'water':
-        return value < 2 ? 'Need to hydrate earlier.' : 'Hydration target almost done.';
+        return value < 2
+            ? 'Need to hydrate earlier.'
+            : 'Hydration target almost done.';
       case 'heart_rate':
-        return value > 82 ? 'After a busy morning commute.' : 'Measured at rest.';
+        return value > 82
+            ? 'After a busy morning commute.'
+            : 'Measured at rest.';
       default:
         return null;
     }
@@ -276,11 +286,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   List<HealthMetric> _filteredMetrics() {
     final periodStart = _periodStart(_selectedPeriod);
     final results = _metrics.where((metric) {
-      final inPeriod = periodStart == null || !metric.date.isBefore(periodStart);
-      final inType = _selectedTypeFilter == 'all' || metric.type == _selectedTypeFilter;
+      final inPeriod =
+          periodStart == null || !metric.date.isBefore(periodStart);
+      final inType =
+          _selectedTypeFilter == 'all' || metric.type == _selectedTypeFilter;
       return inPeriod && inType;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
 
     return results;
   }
@@ -363,7 +374,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   }
 
   double _averageForType(List<HealthMetric> metrics, String type) {
-    final values = metrics.where((m) => m.type == type).map((m) => m.value).toList();
+    final values = metrics
+        .where((m) => m.type == type)
+        .map((m) => m.value)
+        .toList();
     if (values.isEmpty) {
       return 0;
     }
@@ -478,12 +492,18 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     return '${_formatValue(config.goalTarget, config.decimals)} - ${_formatValue(upper, config.decimals)} ${config.unit}';
   }
 
-  Future<void> _openMetricDialog({HealthMetric? editing, String? presetType}) async {
+  Future<void> _openMetricDialog({
+    HealthMetric? editing,
+    String? presetType,
+  }) async {
     final rootContext = context;
     final isEditing = editing != null;
-    String selectedType = editing?.type ??
+    String selectedType =
+        editing?.type ??
         presetType ??
-        (_selectedTypeFilter == 'all' ? _metricConfigs.keys.first : _selectedTypeFilter);
+        (_selectedTypeFilter == 'all'
+            ? _metricConfigs.keys.first
+            : _selectedTypeFilter);
     DateTime selectedDate = editing?.date ?? DateTime.now();
     String? validationError;
 
@@ -491,7 +511,11 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final valueController = TextEditingController(
       text: editing == null
           ? ''
-          : _formatValue(editing.value, selectedConfig.decimals, trimZeros: true),
+          : _formatValue(
+              editing.value,
+              selectedConfig.decimals,
+              trimZeros: true,
+            ),
     );
     final noteController = TextEditingController(text: editing?.note ?? '');
 
@@ -533,7 +557,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                     const SizedBox(height: AppSpacing.md),
                     TextField(
                       controller: valueController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Value (${config.unit})',
                         hintText: config.quickHint,
@@ -574,7 +600,8 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                       maxLines: 2,
                       decoration: InputDecoration(
                         labelText: 'Notes (optional)',
-                        hintText: 'Sleep quality, workout type, mood trigger...',
+                        hintText:
+                            'Sleep quality, workout type, mood trigger...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
@@ -606,18 +633,24 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                     }
 
                     final newMetric = HealthMetric(
-                      id: editing?.id ?? 'manual_${DateTime.now().microsecondsSinceEpoch}',
+                      id:
+                          editing?.id ??
+                          'manual_${DateTime.now().microsecondsSinceEpoch}',
                       name: config.label,
                       type: config.key,
                       value: _round(parsed, config.decimals),
                       unit: config.unit,
                       date: selectedDate,
-                      note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+                      note: noteController.text.trim().isEmpty
+                          ? null
+                          : noteController.text.trim(),
                     );
 
                     setState(() {
                       if (isEditing) {
-                        final index = _metrics.indexWhere((m) => m.id == editing!.id);
+                        final index = _metrics.indexWhere(
+                          (m) => m.id == editing!.id,
+                        );
                         if (index != -1) {
                           _metrics[index] = newMetric;
                         }
@@ -630,7 +663,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                     Navigator.pop(dialogContext);
                     ScaffoldMessenger.of(rootContext).showSnackBar(
                       SnackBar(
-                        content: Text(isEditing ? 'Entry updated.' : 'Entry added.'),
+                        content: Text(
+                          isEditing ? 'Entry updated.' : 'Entry added.',
+                        ),
                         duration: const Duration(seconds: 2),
                       ),
                     );
@@ -680,29 +715,39 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Health Tracking', style: textTheme.headlineSmall),
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loadHealthMetrics,
-            icon: const Icon(Icons.refresh_rounded),
+      appBar: const GaiaNavBarAppBar(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+            child: Wrap(
+              runSpacing: 12,
+              spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Health Tracking', style: textTheme.headlineSmall),
+                OutlinedButton.icon(
+                  onPressed: _loadHealthMetrics,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Refresh'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _openMetricDialog(),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add Entry'),
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            tooltip: 'Add entry',
-            onPressed: () => _openMetricDialog(),
-            icon: const Icon(Icons.add_rounded),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                ? _buildErrorState()
+                : _buildContent(),
           ),
-          const SizedBox(width: AppSpacing.xs),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? _buildErrorState()
-              : _buildContent(),
     );
   }
 
@@ -790,8 +835,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
           Text('Health Overview', style: textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Score ${score.toStringAsFixed(0)} • ${_scoreLabel(score)}',
-            style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            'Score ${score.toStringAsFixed(0)} â€¢ ${_scoreLabel(score)}',
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
@@ -819,7 +866,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
 
   Widget _summaryPill({required IconData icon, required String text}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: AppColors.white.withOpacity(0.65),
         borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -870,7 +920,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                 ..._metricConfigs.values.map(
                   (config) => Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _buildTypeFilterChip(label: config.label, value: config.key),
+                    child: _buildTypeFilterChip(
+                      label: config.label,
+                      value: config.key,
+                    ),
                   ),
                 ),
               ],
@@ -965,7 +1018,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             const SizedBox(height: AppSpacing.sm),
             Text(
               data.value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(data.subtitle, style: Theme.of(context).textTheme.bodyMedium),
@@ -994,10 +1049,15 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
           if (alerts.isEmpty)
             Row(
               children: [
-                Icon(Icons.check_circle_outline_rounded, color: AppColors.turquoise),
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: AppColors.turquoise,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 const Expanded(
-                  child: Text('No concerning patterns found in the selected range.'),
+                  child: Text(
+                    'No concerning patterns found in the selected range.',
+                  ),
                 ),
               ],
             ),
@@ -1019,7 +1079,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(alert.title, style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          alert.title,
+                          style: textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(alert.description, style: textTheme.bodyMedium),
                       ],
@@ -1038,7 +1103,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final textTheme = Theme.of(context).textTheme;
     final rankedTypes = _metricConfigs.keys.toList()
       ..sort(
-        (a, b) => _entriesForType(filtered, b).length.compareTo(_entriesForType(filtered, a).length),
+        (a, b) => _entriesForType(
+          filtered,
+          b,
+        ).length.compareTo(_entriesForType(filtered, a).length),
       );
     final selectedTypes = _selectedTypeFilter == 'all'
         ? rankedTypes.take(4).toList()
@@ -1058,17 +1126,22 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             children: selectedTypes.map((type) {
               final config = _metricConfigs[type]!;
               final entries = _entriesForType(filtered, type);
-              final history = entries.reversed.take(10).map((m) => m.value).toList();
+              final history = entries.reversed
+                  .take(10)
+                  .map((m) => m.value)
+                  .toList();
               final trend = _trendPercent(history);
               final positive = _isPositiveTrend(type, trend);
               final trendColor = trend == 0
                   ? AppColors.gray[700]!
                   : positive
-                      ? AppColors.turquoise
-                      : AppColors.pink;
+                  ? AppColors.turquoise
+                  : AppColors.pink;
               final latest = entries.isEmpty ? null : entries.first;
               final average = _averageForType(filtered, type);
-              final cardWidth = screenWidth > 880 ? (screenWidth - AppSpacing.md * 3) / 2 : screenWidth;
+              final cardWidth = screenWidth > 880
+                  ? (screenWidth - AppSpacing.md * 3) / 2
+                  : screenWidth;
 
               return SizedBox(
                 width: cardWidth,
@@ -1086,14 +1159,17 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                           Icon(config.icon, color: config.color),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
-                            child: Text(config.label, style: textTheme.titleSmall),
+                            child: Text(
+                              config.label,
+                              style: textTheme.titleSmall,
+                            ),
                           ),
                           Icon(
                             trend == 0
                                 ? Icons.trending_flat_rounded
                                 : trend > 0
-                                    ? Icons.trending_up_rounded
-                                    : Icons.trending_down_rounded,
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
                             color: trendColor,
                           ),
                           const SizedBox(width: AppSpacing.xs),
@@ -1111,7 +1187,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                         latest == null
                             ? 'No entries'
                             : 'Latest: ${_formatValue(latest.value, config.decimals)} ${config.unit}',
-                        style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                        style: textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
@@ -1198,7 +1276,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                     children: [
                       Icon(config.icon, size: 18, color: config.color),
                       const SizedBox(width: AppSpacing.sm),
-                      Text(config.label, style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        config.label,
+                        style: textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const Spacer(),
                       Text(
                         latest == null
@@ -1221,7 +1304,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Goal: ${_goalText(config)}',
-                    style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.gray[700],
+                    ),
                   ),
                 ],
               ),
@@ -1292,7 +1377,8 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: (config?.color ?? AppColors.gray).withOpacity(0.12),
+                      backgroundColor: (config?.color ?? AppColors.gray)
+                          .withOpacity(0.12),
                       child: Icon(
                         config?.icon ?? Icons.health_and_safety_outlined,
                         color: config?.color ?? AppColors.gray[800],
@@ -1309,25 +1395,34 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                               Expanded(
                                 child: Text(
                                   metric.name,
-                                  style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               Text(
                                 '${_formatValue(metric.value, config?.decimals ?? 1)} ${metric.unit}',
-                                style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                                style: textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             _formatEntryDate(metric.date),
-                            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: AppColors.gray[700],
+                            ),
                           ),
-                          if (metric.note != null && metric.note!.trim().isNotEmpty) ...[
+                          if (metric.note != null &&
+                              metric.note!.trim().isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               metric.note!,
-                              style: textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ],
                         ],
@@ -1377,7 +1472,9 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
         const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(
           onPressed: () => _openMetricDialog(
-            presetType: _selectedTypeFilter == 'all' ? null : _selectedTypeFilter,
+            presetType: _selectedTypeFilter == 'all'
+                ? null
+                : _selectedTypeFilter,
           ),
           icon: const Icon(Icons.add_rounded),
           label: const Text('Add Entry'),
@@ -1405,10 +1502,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final today = DateUtils.dateOnly(now);
     final diff = today.difference(day).inDays;
     if (diff == 0) {
-      return 'Today • ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+      return 'Today â€¢ ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
     }
     if (diff == 1) {
-      return 'Yesterday • ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+      return 'Yesterday â€¢ ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
     }
     if (diff < 7) {
       return '$diff days ago';

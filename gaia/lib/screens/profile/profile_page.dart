@@ -3,6 +3,7 @@ import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -31,7 +32,6 @@ class _ProfilePageState extends State<ProfilePage> {
   int? _initialAge;
   String? _initialGender;
   String? _initialPhone;
-  String? _initialLocation;
   String? _gender;
   final List<String> _genders = const ["male", "female", "other"];
 
@@ -80,7 +80,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _initialAge = user.age;
     _initialGender = user.gender;
     _initialPhone = user.phone;
-    _initialLocation = user.location;
     _gender = user.gender;
     _nameController.text = user.name;
     _emailController.text = user.email;
@@ -102,7 +101,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final ageText = _ageController.text.trim();
     final age = ageText.isEmpty ? null : int.tryParse(ageText);
     final phone = _phoneController.text.trim();
-    final location = _locationController.text.trim();
 
     final hasChanges =
         name != _initialName ||
@@ -110,8 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
         password.isNotEmpty ||
         age != _initialAge ||
         _gender != _initialGender ||
-        phone != (_initialPhone ?? "") ||
-        location != (_initialLocation ?? "");
+        phone != (_initialPhone ?? "");
 
     if (!hasChanges) {
       setState(() {
@@ -135,7 +132,6 @@ class _ProfilePageState extends State<ProfilePage> {
         age: age != _initialAge ? age : null,
         gender: _gender != _initialGender ? _gender : null,
         phone: phone != (_initialPhone ?? "") ? phone : null,
-        location: location != (_initialLocation ?? "") ? location : null,
       );
       _setFormValues(user);
       _passwordController.clear();
@@ -189,12 +185,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.gray.shade900,
-        elevation: 0,
-      ),
+      appBar: const GaiaNavBarAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -325,11 +316,46 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _locationController,
-                              decoration: _inputDecoration(
-                                label: "Location",
-                                icon: Icons.location_on_outlined,
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray.shade100,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    color: AppColors.gray.shade800,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Location (device permission)",
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: AppColors.gray.shade800,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Text(
+                                          _locationController.text.isEmpty
+                                              ? "No location saved"
+                                              : _locationController.text,
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            color: AppColors.gray.shade900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: AppSpacing.lg),
@@ -443,8 +469,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           strokeWidth: 2.4,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                            AppColors.white,
-                                          ),
+                                                AppColors.white,
+                                              ),
                                         ),
                                       )
                                     : const Text("Save Changes"),

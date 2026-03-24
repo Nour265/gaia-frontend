@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
+import 'package:gaia/widgets/navbar.dart';
 import 'create_doctor_dialog.dart';
 
 class AdminDoctorsPage extends StatefulWidget {
@@ -45,12 +46,14 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       );
       // Reload the doctors list to reflect the change
       _loadDoctors();
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            currentStatus ? 'Doctor deactivated successfully' : 'Doctor activated successfully',
+            currentStatus
+                ? 'Doctor deactivated successfully'
+                : 'Doctor activated successfully',
           ),
           backgroundColor: AppColors.turquoise,
         ),
@@ -59,7 +62,9 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error updating doctor status: ${_friendlyError(error)}'),
+          content: Text(
+            'Error updating doctor status: ${_friendlyError(error)}',
+          ),
           backgroundColor: AppColors.pink,
         ),
       );
@@ -71,7 +76,7 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       context: context,
       builder: (context) => const CreateDoctorDialog(),
     );
-    
+
     if (result == true) {
       _loadDoctors(); // Refresh the list
     }
@@ -93,50 +98,60 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
     final isWeb = size.width > 800;
 
     return Scaffold(
       backgroundColor: AppColors.gray.shade100,
-      appBar: AppBar(
-        title: Text('Doctor Management', style: textTheme.headlineSmall),
-        backgroundColor: AppColors.white,
-        elevation: 1,
-        foregroundColor: AppColors.gray.shade900,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.adminDashboard);
-              },
-              icon: const Icon(Icons.dashboard_outlined),
-              tooltip: 'Go to Dashboard',
-            ),
+      appBar: const GaiaNavBarAppBar(),
+      body: Column(
+        children: [
+          _buildPageHeader(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                ? _buildErrorState()
+                : _buildDoctorsContent(isWeb),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton.icon(
-              onPressed: _showCreateDoctorDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Doctor'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
-                foregroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+      child: Wrap(
+        runSpacing: 12,
+        spacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'Doctor Management',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, Routes.adminDashboard);
+            },
+            icon: const Icon(Icons.dashboard_outlined),
+            label: const Text('Dashboard'),
+          ),
+          ElevatedButton.icon(
+            onPressed: _showCreateDoctorDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Doctor'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.purple,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? _buildErrorState()
-              : _buildDoctorsContent(isWeb),
     );
   }
 
@@ -145,11 +160,7 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppColors.gray.shade700,
-          ),
+          Icon(Icons.error_outline, size: 64, color: AppColors.gray.shade700),
           const SizedBox(height: 16),
           Text(
             _errorMessage!,
@@ -191,9 +202,9 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
             const SizedBox(height: 8),
             Text(
               'Add the first doctor using the button above',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.gray.shade700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.gray.shade700),
             ),
           ],
         ),
@@ -249,7 +260,7 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       itemBuilder: (context, index) {
         final doctor = _doctors[index];
         final isActive = doctor['is_active'] ?? false;
-        
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           elevation: 2,
@@ -297,18 +308,14 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: AppColors.gray.shade700,
-          ),
+          Icon(icon, size: 16, color: AppColors.gray.shade700),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.gray.shade700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade700),
             ),
           ),
         ],
@@ -320,15 +327,19 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isActive ? AppColors.turquoise.shade100 : AppColors.gray.shade200,
+        color: isActive
+            ? AppColors.turquoise.shade100
+            : AppColors.gray.shade200,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         isActive ? 'Active' : 'Inactive',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isActive ? AppColors.turquoise.shade800 : AppColors.gray.shade700,
-              fontWeight: FontWeight.w600,
-            ),
+          color: isActive
+              ? AppColors.turquoise.shade800
+              : AppColors.gray.shade700,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

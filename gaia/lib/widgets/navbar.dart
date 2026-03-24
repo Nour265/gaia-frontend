@@ -3,8 +3,38 @@ import 'package:gaia/app/routes.dart';
 import 'package:gaia/values/values.dart';
 import 'package:gaia/services/auth_session.dart';
 
+class GaiaNavBarAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const GaiaNavBarAppBar({Key? key, this.showLogin = true}) : super(key: key);
+
+  final bool showLogin;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final contentWidth = width < 980
+        ? width - (AppSpacing.md * 2)
+        : width * 0.7;
+
+    return Container(
+      color: AppColors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Center(
+          child: SizedBox(
+            width: contentWidth.clamp(300.0, width).toDouble(),
+            child: NavBar(showLogin: showLogin),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class NavBar extends StatelessWidget {
-  const NavBar({Key? key, this.showLogin = false}) : super(key: key);
+  const NavBar({Key? key, this.showLogin = true}) : super(key: key);
 
   final bool showLogin;
 
