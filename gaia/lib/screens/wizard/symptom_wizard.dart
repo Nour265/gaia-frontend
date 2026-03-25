@@ -10,453 +10,118 @@ class SymptomWizard extends StatefulWidget {
   State<SymptomWizard> createState() => _SymptomWizardState();
 }
 
-// ACTUAL symptom names from dataset - directly mapped for model
-final Map<String, List<String>> SYMPTOM_BRANCHES = {
-  'abdominal': [
-    'sharp abdominal pain',
-    'lower abdominal pain',
-    'upper abdominal pain',
-    'burning abdominal pain',
-    'vomiting',
-    'nausea',
-    'diarrhea',
-    'constipation',
-    'stomach bloating',
-    'cramps and spasms',
-  ],
-  'respiratory': [
-    'cough',
-    'wheezing',
-    'difficulty breathing',
-    'shortness of breath',
-    'coughing up sputum',
-    'sore throat',
-    'nasal congestion',
-    'coryza',
-    'chest tightness',
-    'congestion in chest',
-  ],
-  'pain': [
-    'back pain',
-    'neck pain',
-    'joint pain',
-    'leg pain',
-    'arm pain',
-    'hand or finger pain',
-    'wrist pain',
-    'shoulder pain',
-    'ear pain',
-    'headache',
-  ],
-  'cardiac': [
-    'sharp chest pain',
-    'burning chest pain',
-    'palpitations',
-    'irregular heartbeat',
-    'breathing fast',
-    'decreased heart rate',
-    'anxiety and nervousness',
-    'sweating',
-    'dizziness',
-    'fainting',
-  ],
-  'skin': [
-    'skin rash',
-    'skin lesion',
-    'skin growth',
-    'acne or pimples',
-    'itching of skin',
-    'skin swelling',
-    'skin moles',
-    'skin irritation',
-  ],
-  'systemic': [
-    'fever',
-    'chills',
-    'fatigue',
-    'feeling ill',
-    'ache all over',
-    'weakness',
-    'weight gain',
-    'decreased appetite',
-  ],
-  'neurological': [
-    'loss of sensation',
-    'paresthesia',
-    'dizziness',
-    'difficulty speaking',
-    'seizures',
-    'disturbance of memory',
-    'abnormal involuntary movements',
-    'focal weakness',
-  ],
-  'ent': [
-    'hoarse voice',
-    'difficulty in swallowing',
-    'throat swelling',
-    'swollen or red tonsils',
-    'diminished hearing',
-    'eye redness',
-    'pus draining from ear',
-    'nosebleed',
-  ],
-  'gynecological': [
-    'painful urination',
-    'vaginal itching',
-    'vaginal discharge',
-    'vaginal pain',
-    'vaginal redness',
-    'pelvic pain',
-    'painful menstruation',
-    'heavy menstrual flow',
-  ],
-  'urinary': [
-    'frequent urination',
-    'painful urination',
-    'involuntary urination',
-    'blood in urine',
-    'retention of urine',
-    'suprapubic pain',
-  ],
-};
+// Data Structure to hold dynamically generated pages
+class WizardStepData {
+  final String mainCategory;
+  final String subCategory;
+  final List<String> symptoms;
 
-// Old mapping - DEPRECATED but keeping for reference
-final Map<String, String> SYMPTOM_MAPPING = {
-  // Cardiac symptoms
-  'Crushing chest pain': 'sharp chest pain',
-  'Burning or crushing chest pain': 'burning chest pain',
-  'Tight chest feeling': 'chest tightness',
-  'Palpitations or irregular heartbeat': 'palpitations',
-  'Shortness of breath without pain': 'shortness of breath',
-  'Combination of above': 'chest tightness',
-  'Radiating to left arm, shoulder, or jaw': 'sharp chest pain',
-  'Occurs with exertion or activity': 'shortness of breath',
-  'Occurs at rest or stress': 'anxiety and nervousness',
-  'With sweating or nausea': 'sweating',
-  'With dizziness or fainting': 'dizziness',
-  'Heart rate too fast (tachycardia)': 'breathing fast',
-  'Heart rate too slow (bradycardia)': 'decreased heart rate',
-  'Irregular heartbeat pattern': 'irregular heartbeat',
-  'Leg swelling or fluid retention': 'peripheral edema',
-  'Fatigue with minimal activity': 'fatigue',
-  'Sudden onset (minutes)': 'sharp chest pain',
-  'Gradual over hours or days': 'chest tightness',
-  'Recurring episodes': 'palpitations',
+  WizardStepData(this.mainCategory, this.subCategory, this.symptoms);
+}
 
-  // Respiratory symptoms
-  'Persistent cough': 'cough',
-  'Difficulty breathing or wheezing': 'difficulty breathing',
-  'Shortness of breath with minimal activity': 'shortness of breath',
-  'Cough with mucus/phlegm': 'coughing up sputum',
-  'Nasal congestion or sinus issues': 'nasal congestion',
-  'Sneezing or allergic symptoms': 'coryza',
-  'Dry persistent cough': 'cough',
-  'Coughing up sputum or mucus': 'coughing up sputum',
-  'Cough worse at night': 'cough',
-  'Cough triggered by activity': 'cough',
-  'Wheezing sounds when breathing': 'wheezing',
-  'Rapid or labored breathing': 'breathing fast',
-  'Breathing difficulty when lying down': 'difficulty breathing',
-  'Chest congestion or tightness': 'congestion in chest',
-  'Hourly to daily sleep interruption': 'apnea',
-  'Fever or chills': 'fever',
-  'Sore throat or hoarse voice': 'sore throat',
-  'Nasal congestion with cough': 'nasal congestion',
-  'Fatigue or body aches': 'fatigue',
-  'No fever or systemic symptoms': 'cough',
-  'Triggered by allergens or animals': 'allergic reaction',
-
-  // Fever & Systemic
-  'High fever (38-40°C / 100-104°F)': 'fever',
-  'Low-grade fever (37-38°C / 98-100°F)': 'fever',
-  'No fever but feeling very ill': 'feeling ill',
-  'Recurring fever with chills': 'chills',
-  'Fever with sweating': 'sweating',
-  'Cough or respiratory symptoms': 'cough',
-  'Sore throat and swollen tonsils': 'swollen or red tonsils',
-  'Abdominal pain or diarrhea': 'diarrhea',
-  'Aches and pains throughout body': 'ache all over',
-  'Headache with neck stiffness': 'headache',
-  'Fatigue and general malaise': 'fatigue',
-  'Mild - can function normally': 'feeling ill',
-  'Moderate - limited activities': 'fatigue',
-  'Severe - bedridden': 'fatigue',
-  'With confusion or altered mental status': 'disturbance of memory',
-
-  // GI symptoms
-  'Sharp/acute abdominal pain': 'sharp abdominal pain',
-  'Cramping or spasms': 'cramps and spasms',
-  'Upper abdominal pain': 'upper abdominal pain',
-  'Lower abdominal pain': 'lower abdominal pain',
-  'Nausea or vomiting': 'nausea',
-  'Diarrhea or constipation': 'diarrhea',
-  'Right upper abdomen (liver/gallbladder area)': 'upper abdominal pain',
-  'Upper middle abdomen (stomach)': 'upper abdominal pain',
-  'Right lower abdomen (appendix area)': 'lower abdominal pain',
-  'Left lower abdomen': 'lower abdominal pain',
-  'Lower middle abdomen': 'lower abdominal pain',
-  'Diffuse across abdomen': 'burning abdominal pain',
-  'Vomiting or nausea': 'vomiting',
-  'Diarrhea (loose, frequent)': 'diarrhea',
-  'Constipation (hard to pass)': 'constipation',
-  'Bloating or stomach distension': 'stomach bloating',
-  'Blood in stool or dark stool': 'blood in stool',
-  'Changes in bowel habits': 'changes in stool appearance',
-  'Triggered by eating certain foods': 'nausea',
-  'Worse after fatty meals': 'burning abdominal pain',
-  'Related to stress': 'stomach bloating',
-  'Constant or recurring': 'burning abdominal pain',
-  'Sudden onset': 'sharp abdominal pain',
-  'No obvious trigger': 'nausea',
-  'Weight loss or decreased appetite': 'decreased appetite',
-  'Jaundice (yellowing)': 'jaundice',
-  'Heartburn or acid reflux': 'heartburn',
-  'Recent antibiotics or medication': 'diarrhea',
-
-  // Neurological
-  'Severe headache (frontal or generalized)': 'frontal headache',
-  'Migraines or throbbing pain': 'headache',
-  'Dizziness or vertigo': 'dizziness',
-  'Fainting or near-fainting': 'fainting',
-  'Memory problems or confusion': 'disturbance of memory',
-  'Tingling or numbness': 'paresthesia',
-  'Sudden severe onset (thunderclap)': 'headache',
-  'Gradual worsening over days': 'headache',
-  'Throbbing on one side': 'headache',
-  'Pressure or tightness': 'headache',
-  'Associated with visual changes': 'double vision',
-  'Associated with nausea': 'nausea',
-  'Vision changes or double vision': 'double vision',
-  'Weakness or paralysis': 'focal weakness',
-  'Loss of sensation/numbness': 'loss of sensation',
-  'Seizure or convulsions': 'seizures',
-  'Slurred speech or difficulty speaking': 'difficulty speaking',
-  'Balance or coordination problems': 'paresthesia',
-  'After head trauma or injury': 'headache',
-  'During or after stress/anxiety': 'anxiety and nervousness',
-  'During panic episodes': 'anxiety and nervousness',
-  'Progressive over weeks/months': 'headache',
-  'Recurring pattern': 'headache',
-  'First time experiencing this': 'dizziness',
-
-  // Pain & Musculoskeletal
-  'Back pain (lower or upper)': 'back pain',
-  'Neck pain or stiffness': 'neck pain',
-  'Joint pain (arthritis-like)': 'joint pain',
-  'Sharp localized pain': 'sharp abdominal pain',
-  'Widespread muscle aches': 'ache all over',
-  'Hand, wrist, or finger pain': 'hand or finger pain',
-  'Stiffness, especially in morning': 'back stiffness or tightness',
-  'Worse with movement or activity': 'back pain',
-  'Swelling or warmth in joint': 'peripheral edema',
-  'Limiting range of motion': 'problems with movement',
-  'Severe sharp episodes': 'sharp abdominal pain',
-  'Chronic dull ache': 'back pain',
-  'Tingling or numbness (nerve-related)': 'paresthesia',
-  'Weakness in affected area': 'arm weakness',
-  'Visible swelling or redness': 'skin swelling',
-  'Rash or skin changes': 'skin rash',
-  'Fever or feeling ill': 'fever',
-  'After injury or trauma': 'back pain',
-  'Gradually over time': 'back pain',
-  'Repetitive strain (occupation)': 'wrist pain',
-  'Sudden without cause': 'back pain',
-
-  // Urinary
-  'Frequent urination (many times daily)': 'frequent urination',
-  'Urgency - sudden need to urinate': 'painful urination',
-  'Painful or burning urination': 'painful urination',
-  'Involuntary leakage (incontinence)': 'involuntary urination',
-  'Blood in urine': 'blood in urine',
-  'Retention or difficulty urinating': 'retention of urine',
-  'Suprapubic pain (above bladder)': 'suprapubic pain',
-  'Lower abdominal or pelvic pain': 'lower abdominal pain',
-  'Urgency and frequency together': 'frequent urination',
-  'Dark or discolored urine': 'blood in urine',
-  'Urgency at night (nocturia)': 'excessive urination at night',
-  'Back or flank pain': 'back pain',
-  'Recent unprotected sexual contact': 'painful urination',
-
-  // Gynecological
-  'Painful menstruation': 'idiopathic painful menstruation',
-  'Heavy or long menstrual periods': 'long menstrual periods',
-  'Irregular cycle or unpredictable': 'idiopathic irregular menstrual cycle',
-  'Vaginal discharge or odor': 'vaginal discharge',
-  'Vaginal itching or burning': 'vaginal itching',
-  'Vaginal pain or discomfort': 'vaginal pain',
-  'Severe cramping before/during period': 'cramps and spasms',
-  'Abnormal amount of bleeding': 'blood clots during menstrual periods',
-  'Clots in menstrual blood': 'blood clots during menstrual periods',
-  'Yellow, white, or thick discharge': 'vaginal discharge',
-  'Itching with vaginal discharge': 'vaginal itching',
-  'Redness or swelling of vulva': 'vaginal redness',
-  'Lower abdominal pain between periods': 'lower abdominal pain',
-  'Pelvic pain or discomfort': 'pelvic pain',
-  'Pain during intercourse': 'pain during intercourse',
-  'Infertility concerns': 'infertility',
-
-  // Skin
-  'Rash with redness and itching': 'skin rash',
-  'Dry, flaky, or scaly skin': 'skin dryness, peeling, scaliness, or roughness',
-  'Blisters or weeping sores': 'skin rash',
-  'Skin lesion or growth': 'skin lesion',
-  'Acne or pimples': 'acne or pimples',
-  'Discoloration or pigmentation change': 'skin pigmentation disorder',
-  'Itchy and inflamed (eczema-like)': 'itching of skin',
-  'Thick, scaly patches (psoriasis-like)': 'skin rash',
-  'Clustered blisters (herpes-like)': 'skin rash',
-  'Widespread vs localized': 'skin rash',
-  'Weeping or draining pus': 'skin rash',
-  'Brown/tan spots or moles': 'skin moles',
-  'After contact with allergen': 'allergic reaction',
-  'Worse with sweat or moisture': 'itching of skin',
-  'Spreading to other areas': 'skin rash',
-  'Sun exposure': 'skin rash',
-  'Severe pain or burning': 'skin irritation',
-  'Constant itching': 'itching of skin',
-  'Signs of infection (pus, warmth)': 'skin rash',
-  'Recently infected or scabbing': 'skin rash',
-  'Affecting joints (psoriasis sign)': 'joint pain',
-
-  // ENT
-  'Sore throat or difficulty swallowing': 'sore throat',
-  'Earache or ear pain': 'ear pain',
-  'Nasal congestion or sinus pain': 'nasal congestion',
-  'Hearing loss or ear fullness': 'diminished hearing',
-  'Eye symptoms: redness or stye': 'eye redness',
-  'Hoarseness or voice changes': 'hoarse voice',
-  'Severe sore throat': 'sore throat',
-  'Swollen or red tonsils': 'swollen or red tonsils',
-  'White patches on throat': 'sore throat',
-  'Difficulty swallowing': 'difficulty in swallowing',
-  'Hoarse voice': 'hoarse voice',
-  'Ear pain or earache': 'ear pain',
-  'Pus or drainage from ear': 'pus draining from ear',
-  'Ringing in ears': 'ringing in ear',
-  'Fluid feeling in ear': 'fluid in ear',
-  'Sinus pain or pressure': 'sinus congestion',
-  'Nosebleed': 'nosebleed',
-  'Sinus drainage': 'sinus congestion',
-  'Persistent cough from drainage': 'cough',
-
-  // Psychiatric
-  'Persistent sadness (depression)': 'depression',
-  'Excessive worry or anxiety': 'anxiety and nervousness',
-  'Panic attacks or panic disorder': 'anxiety and nervousness',
-  'Mood swings or emotional instability': 'excessive anger',
-  'Unusual thoughts or beliefs': 'delusions or hallucinations',
-  'Behavioral or personality changes': 'personality disorder',
-  'Loss of interest in activities': 'depression',
-  'Sleep disturbance (insomnia)': 'insomnia',
-  'Excessive fatigue or low energy': 'fatigue',
-  'Difficulty concentrating': 'disturbance of memory',
-  'Feelings of worthlessness': 'depression',
-  'Thoughts of self-harm': 'depressive or psychotic symptoms',
-  'Heart palpitations during anxiety': 'palpitations',
-  'Sweating or trembling': 'sweating',
-  'Restlessness or agitation': 'restlessness',
-  'Appetite or weight changes': 'weight gain',
-  'Headaches or body aches': 'headache',
-  'Recent onset (days/weeks)': 'anxiety and nervousness',
-  'Longstanding (months)': 'depression',
-  'Triggered by specific events': 'anxiety and nervousness',
-  'No clear trigger': 'depression',
-  'Progressive worsening': 'depression',
-
-  // Other & finishing
-  'Hair, scalp, or nail issues': 'irregular appearing nails',
-  'Hearing loss or balance problems': 'diminished hearing',
-  'Weight gain or metabolic issues': 'weight gain',
-  'Swelling in legs or feet': 'peripheral edema',
-  'Sweating or night sweats': 'sweating',
-  'Weight loss': 'weight gain',
-  'None of these': 'feeling ill',
-  'Mild symptoms - living normally': 'feeling ill',
-  'Moderate symptoms - some limitations': 'fatigue',
-  'Severe symptoms - very limited': 'fatigue',
-  'Very severe - unable to function': 'weakness',
-  'Symptom is worsening': 'fatigue',
-  'Symptom is stable/chronic': 'fatigue',
-  'Recent medication change': 'feeling ill',
-  'Recent lifestyle change': 'fatigue',
-  'No obvious cause': 'feeling ill',
-  'Triggered by specific activity': 'fatigue',
+// MAPPING: ALL 230 symptoms are now fully broken down into UI sub-areas!
+final Map<String, Map<String, List<String>>> SYMPTOM_BRANCHES = {
+  'Pain & Discomfort': {
+    'Head, Face & Neck': ['headache', 'frontal headache', 'neck pain', 'facial pain', 'toothache', 'mouth pain', 'pain in gums', 'gum pain', 'pain in eye', 'eye burns or stings', 'painful sinuses', 'ear pain'],
+    'Torso & Back': ['sharp chest pain', 'burning chest pain', 'rib pain', 'hurts to breath', 'back pain', 'low back pain', 'back cramps or spasms', 'back stiffness or tightness', 'heartburn'],
+    'Abdominal & Pelvic': ['sharp abdominal pain', 'lower abdominal pain', 'burning abdominal pain', 'upper abdominal pain', 'suprapubic pain', 'pelvic pain', 'pain during pregnancy', 'painful menstruation', 'painful urination', 'pain during intercourse', 'pain in testicles', 'vaginal pain', 'pain of the anus', 'groin pain'],
+    'Limbs & Joints': ['leg pain', 'hip pain', 'knee pain', 'foot or toe pain', 'ankle pain', 'arm pain', 'hand or finger pain', 'wrist pain', 'elbow pain', 'shoulder pain', 'joint pain', 'arm stiffness or tightness', 'hand or finger stiffness or tightness', 'knee stiffness or tightness', 'hip stiffness or tightness', 'shoulder stiffness or tightness'],
+    'General Body Pain': ['ache all over', 'bones are painful', 'cramps and spasms', 'lower body pain', 'side pain'],
+  },
+  'Abdominal & Digestive': {
+    'Stomach & Digestion': ['nausea', 'vomiting', 'vomiting blood', 'regurgitation', 'regurgitation.1', 'decreased appetite', 'stomach bloating'],
+    'Bowel & Rectal': ['diarrhea', 'constipation', 'blood in stool', 'melena', 'rectal bleeding', 'changes in stool appearance'],
+    'Throat & Swallowing': ['difficulty in swallowing'],
+  },
+  'Respiratory & Chest': {
+    'Breathing & Cough': ['shortness of breath', 'breathing fast', 'difficulty breathing', 'abnormal breathing sounds', 'apnea', 'cough', 'coughing up sputum', 'hemoptysis', 'wheezing', 'sneezing'],
+    'Heart & Chest': ['chest tightness', 'congestion in chest', 'palpitations', 'irregular heartbeat', 'decreased heart rate', 'increased heart rate'],
+    'Nose & Sinus': ['nasal congestion', 'sinus congestion', 'coryza'],
+  },
+  'Neurological & Psychological': {
+    'Mood & Behavior': ['anxiety and nervousness', 'depression', 'depressive or psychotic symptoms', 'hostile behavior', 'excessive anger', 'temper problems', 'low self-esteem', 'obsessions and compulsions', 'antisocial behavior', 'hysterical behavior'],
+    'Cognitive & Sleep': ['delusions or hallucinations', 'restlessness', 'insomnia', 'sleepiness', 'disturbance of memory'],
+    'Neurological & Physical': ['dizziness', 'fainting', 'seizures', 'difficulty speaking', 'abnormal involuntary movements', 'abnormal movement of eyelid', 'problems with movement'],
+    'Weakness & Sensation': ['weakness', 'loss of sensation', 'focal weakness', 'hand or finger weakness', 'arm weakness', 'leg weakness', 'paresthesia', 'foreign body sensation in eye'],
+  },
+  'Skin & Swelling': {
+    'Skin Issues & Rashes': ['abnormal appearing skin', 'skin lesion', 'acne or pimples', 'skin growth', 'skin moles', 'itching of skin', 'skin dryness, peeling, scaliness, or roughness', 'skin irritation', 'skin rash', 'diaper rash', 'irregular appearing scalp', 'itchy scalp', 'warts'],
+    'Head, Neck & Face Swelling': ['throat swelling', 'lip swelling', 'neck mass', 'jaw swelling', 'neck swelling', 'mass on eyelid', 'eyelid swelling', 'eyelid lesion or rash'],
+    'Body & Limbs Swelling': ['skin swelling', 'peripheral edema', 'hand or finger swelling', 'wrist swelling', 'arm swelling', 'knee swelling', 'leg swelling', 'foot or toe swelling', 'ankle swelling', 'elbow swelling', 'kidney mass', 'hand or finger lump or mass', 'back mass or lump', 'arm lump or mass', 'mass or swelling around the anus'],
+    'Other & Localized Itching': ['swelling of scrotum', 'vaginal itching', 'mouth ulcer', 'irregular appearing nails', 'itchy ear(s)', 'itchiness of eye', 'itching of the anus'],
+  },
+  'Head, Eye, Ear & Throat': {
+    'Eyes & Vision': ['white discharge from eye', 'diminished vision', 'double vision', 'symptoms of eye', 'spots or clouds in vision', 'eye redness', 'lacrimation', 'blindness', 'bleeding from eye', 'swollen eye'],
+    'Ears & Hearing': ['diminished hearing', 'pus draining from ear', 'ringing in ear', 'plugged feeling in ear', 'fluid in ear', 'pulling at ears', 'redness in ear', 'bleeding from ear'],
+    'Nose, Throat & Mouth': ['hoarse voice', 'sore throat', 'mouth dryness', 'symptoms of the face', 'nosebleed', 'swollen or red tonsils', 'fears and phobias'],
+  },
+  'Urinary & Pelvic': {
+    'Urinary & Kidney': ['retention of urine', 'involuntary urination', 'frequent urination', 'blood in urine', 'unusual color or odor to urine', 'symptoms of the kidneys', 'excessive urination at night', 'symptoms of bladder', 'hesitancy', 'low urine output'],
+    'Female Reproductive': ['vaginal discharge', 'intermenstrual bleeding', 'vaginal redness', 'problems during pregnancy', 'spotting or bleeding during pregnancy', 'blood clots during menstrual periods', 'recent pregnancy', 'uterine contractions', 'long menstrual periods', 'heavy menstrual flow', 'infertility', 'unpredictable menstruation', 'frequent menstruation'],
+    'Male Reproductive': ['symptoms of the scrotum and testes', 'impotence', 'symptoms of prostate'],
+  },
+  'Systemic & General': {
+    'Fever & Fatigue': ['feeling ill', 'hot flashes', 'fever', 'chills', 'fatigue', 'flu-like syndrome', 'sweating'],
+    'Infants & Growth': ['lack of growth', 'irritable infant', 'infant feeding problem'],
+    'Habits & Other': ['abusing alcohol', 'drug abuse', 'jaundice', 'weight gain', 'allergic reaction', 'fluid retention', 'bleeding gums'],
+  },
 };
 
 class _SymptomWizardState extends State<SymptomWizard> {
-  // Multi-select symptom collection
-  final Set<String> _selectedSymptoms = {};
-
-  // Wizard phases
   bool _inScreeningPhase = true;
   int _currentStep = 0;
-  Set<String> _selectedCategoryScreens =
-      {}; // Categories selected during screening
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _screeningScrollController = ScrollController();
+  
+  // Tracking Selections
+  final Set<String> _selectedCategoryScreens = {};
+  final Set<String> _selectedSubCategories = {}; // Tracks specific sub-areas
+  final Set<String> _selectedSymptoms = {};
+  
+  // Dynamic list of pages generated based on screening answers
+  List<WizardStepData> _wizardSteps = [];
 
-  // User data for assessment
-  int age = 30; // TODO: Collect from user
-  String gender = 'male'; // TODO: Collect from user
-
-  // General screening questions (yes/no to narrow down)
   final List<Map<String, String>> _screeningQuestions = [
-    {'question': 'Do you have fever or chills?', 'category': 'systemic'},
     {
-      'question':
-          'Any respiratory issues (cough, difficulty breathing, sore throat)?',
-      'category': 'respiratory',
-    },
-    {
-      'question': 'Any chest pain or heart palpitations?',
-      'category': 'cardiac',
+      'question': 'Any pain or discomfort (back, neck, joints, limbs)?',
+      'category': 'Pain & Discomfort',
     },
     {
       'question': 'Any abdominal pain, nausea, or digestive issues?',
-      'category': 'abdominal',
+      'category': 'Abdominal & Digestive',
     },
-    {'question': 'Any pain (back, neck, joints, limbs)?', 'category': 'pain'},
     {
-      'question':
-          'Any neurological symptoms (headache, dizziness, memory issues)?',
-      'category': 'neurological',
+      'question': 'Any respiratory issues, chest pain, or palpitations?',
+      'category': 'Respiratory & Chest',
     },
-    {'question': 'Any skin rash, lesions, or irritation?', 'category': 'skin'},
-    {'question': 'Any ear, nose, or throat symptoms?', 'category': 'ent'},
-    {'question': 'Any urinary or bladder issues?', 'category': 'urinary'},
     {
-      'question': 'Any gynecological symptoms (women only)?',
-      'category': 'gynecological',
+      'question': 'Any neurological symptoms (headache, dizziness, anxiety, memory)?',
+      'category': 'Neurological & Psychological',
+    },
+    {
+      'question': 'Any skin rash, swelling, or lesions?',
+      'category': 'Skin & Swelling',
+    },
+    {
+      'question': 'Any eye, ear, nose, throat, or facial symptoms?',
+      'category': 'Head, Eye, Ear & Throat',
+    },
+    {
+      'question': 'Any urinary, pelvic, or reproductive issues?',
+      'category': 'Urinary & Pelvic',
+    },
+    {
+      'question': 'Any general symptoms like fever, fatigue, or weight changes?',
+      'category': 'Systemic & General',
     },
   ];
-
-  // Symptom categories (shown in priority order after screening)
-  final List<String> _allCategories = [
-    'systemic',
-    'respiratory',
-    'cardiac',
-    'abdominal',
-    'pain',
-    'neurological',
-    'skin',
-    'ent',
-    'urinary',
-    'gynecological',
-  ];
-
-  List<String> get _prioritizedCategories {
-    // Put selected categories first, then the rest
-    final selected = _allCategories
-        .where((c) => _selectedCategoryScreens.contains(c))
-        .toList();
-    final unselected = _allCategories
-        .where((c) => !_selectedCategoryScreens.contains(c))
-        .toList();
-    return [...selected, ...unselected];
-  }
 
   void _toggleScreeningAnswer(String category) {
     setState(() {
       if (_selectedCategoryScreens.contains(category)) {
         _selectedCategoryScreens.remove(category);
+        // Clear subcategories if main is unchecked
+        _selectedSubCategories.removeAll(SYMPTOM_BRANCHES[category]!.keys);
       } else {
         _selectedCategoryScreens.add(category);
       }
@@ -464,17 +129,24 @@ class _SymptomWizardState extends State<SymptomWizard> {
   }
 
   void _finishScreening() {
+    _wizardSteps.clear();
+
+    // Generate pages ONLY for the explicitly SELECTED categories
+    for (String mainCat in _selectedCategoryScreens) {
+      final subMap = SYMPTOM_BRANCHES[mainCat]!;
+      bool hasAnySubSelected = subMap.keys.any((s) => _selectedSubCategories.contains(s));
+
+      for (String subCat in subMap.keys) {
+        // Add the page if it's General, explicitly selected, or if no sub-areas were selected at all
+        if (subCat == 'General' || _selectedSubCategories.contains(subCat) || !hasAnySubSelected) {
+          _wizardSteps.add(WizardStepData(mainCat, subCat, subMap[subCat]!));
+        }
+      }
+    }
+
     setState(() {
       _inScreeningPhase = false;
       _currentStep = 0;
-    });
-  }
-
-  void _backToScreening() {
-    setState(() {
-      _inScreeningPhase = true;
-      _currentStep = 0;
-      _selectedSymptoms.clear();
     });
   }
 
@@ -489,22 +161,32 @@ class _SymptomWizardState extends State<SymptomWizard> {
   }
 
   void _nextCategory() {
-    final currentCategory = _prioritizedCategories[_currentStep];
-    if (_currentStep < _prioritizedCategories.length - 1) {
+    if (_currentStep < _wizardSteps.length - 1) {
       setState(() {
         _currentStep++;
       });
     } else {
-      // Finish - go to results
-      if (_selectedSymptoms.isNotEmpty) {
+      if (_selectedSymptoms.length >= 5) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ResultsPage(
-              age: age,
-              gender: gender,
+              age: 25,
+              gender: 'Male',
               symptoms: _selectedSymptoms.toList(),
             ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              'Please select at least 5 symptoms for an accurate prediction. (Selected: ${_selectedSymptoms.length})',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -516,44 +198,11 @@ class _SymptomWizardState extends State<SymptomWizard> {
       setState(() {
         _currentStep--;
       });
+    } else {
+      setState(() {
+        _inScreeningPhase = true;
+      });
     }
-  }
-
-  Map<String, String> _getCategoryInfo() {
-    final category = _prioritizedCategories[_currentStep];
-
-    final categoryNames = {
-      'abdominal': 'Abdominal & Digestive',
-      'respiratory': 'Respiratory & Breathing',
-      'cardiac': 'Cardiac & Chest',
-      'pain': 'Pain & Joints',
-      'systemic': 'Fever & Systemic',
-      'neurological': 'Neurological & Senses',
-      'skin': 'Skin Conditions',
-      'ent': 'ENT & Throat',
-      'urinary': 'Urinary & Urogenital',
-      'gynecological': 'Gynecological',
-    };
-
-    final categoryDescriptions = {
-      'abdominal':
-          'Select all symptoms related to your abdomen, stomach, and digestion:',
-      'respiratory':
-          'Select all symptoms related to breathing and your respiratory system:',
-      'cardiac': 'Select all symptoms related to your heart and chest:',
-      'pain': 'Select all pain and joint-related symptoms you experience:',
-      'systemic': 'Select general systemic symptoms:',
-      'neurological': 'Select all neurological and sensory symptoms:',
-      'skin': 'Select any skin conditions you have:',
-      'ent': 'Select ear, nose, and throat symptoms:',
-      'urinary': 'Select any urinary symptoms:',
-      'gynecological': 'Select any gynecological symptoms:',
-    };
-
-    return {
-      'name': categoryNames[category] ?? category,
-      'description': categoryDescriptions[category] ?? 'Select symptoms:',
-    };
   }
 
   @override
@@ -584,105 +233,83 @@ class _SymptomWizardState extends State<SymptomWizard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
           Text(
-            'General Health Screening',
-            style: theme.textTheme.displaySmall?.copyWith(fontSize: 28),
+            'Let\'s narrow it down',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Select any symptoms that apply to help narrow down the diagnosis:',
-            style: const TextStyle(color: Colors.grey),
+            'Select any general areas where you are experiencing symptoms.',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 32),
-
-          // Screening questions (checkboxes - NOT sequential)
           Expanded(
-            child: ListView.builder(
-              itemCount: _screeningQuestions.length,
-              itemBuilder: (context, index) {
-                final q = _screeningQuestions[index];
-                final category = q['category']!;
-                final isSelected = _selectedCategoryScreens.contains(category);
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: InkWell(
-                    onTap: () => _toggleScreeningAnswer(category),
-                    borderRadius: BorderRadius.circular(12),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? activeColor.withOpacity(0.05)
-                            : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? activeColor
-                              : Colors.grey.shade200,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
+            child: Scrollbar(
+              controller: _screeningScrollController,
+              thumbVisibility: true,                  
+              thickness: 6.0,
+              radius: const Radius.circular(8),
+              child: SingleChildScrollView(
+                controller: _screeningScrollController, 
+                padding: const EdgeInsets.only(right: 16), // Adds space so scrollbar doesn't cover text
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // LEFT COLUMN (Evens: Pain, Respiratory, Skin, Urinary)
+                    Expanded(
+                      child: Column(
                         children: [
-                          Icon(
-                            isSelected
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color: isSelected
-                                ? activeColor
-                                : Colors.grey.shade400,
-                          ),
-                          const SizedBox(width: 16),
-                          Flexible(
-                            child: Text(
-                              q['question']!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: isSelected
-                                    ? activeColor
-                                    : const Color(0xFF0F172A),
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
+                          for (int i = 0; i < _screeningQuestions.length; i += 2)
+                            _buildScreeningTile(
+                              _screeningQuestions[i]['question']!,
+                              _screeningQuestions[i]['category']!,
+                              _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
+                              activeColor,
+                              theme,
                             ),
-                          ),
                         ],
                       ),
                     ),
-                  ),
-                );
-              },
+                    const SizedBox(width: 16), // Spacing between the 2 columns
+                    
+                    // RIGHT COLUMN (Odds: Abdominal, Neurological, Head/Eye/Ear, Systemic)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          for (int i = 1; i < _screeningQuestions.length; i += 2)
+                            _buildScreeningTile(
+                              _screeningQuestions[i]['question']!,
+                              _screeningQuestions[i]['category']!,
+                              _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
+                              activeColor,
+                              theme,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Count and action button
-          Text(
-            'Selected symptom areas: ${_selectedCategoryScreens.length}',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-
-          const SizedBox(height: 16),
-
           ElevatedButton(
-            onPressed: _selectedCategoryScreens.isNotEmpty
-                ? _finishScreening
-                : null,
+            onPressed: _selectedCategoryScreens.isNotEmpty ? _finishScreening : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: activeColor,
               disabledBackgroundColor: Colors.grey.shade200,
@@ -711,12 +338,131 @@ class _SymptomWizardState extends State<SymptomWizard> {
     );
   }
 
+  Widget _buildScreeningTile(
+    String question,
+    String category,
+    bool isSelected,
+    Color activeColor,
+    ThemeData theme,
+  ) {
+    final subMap = SYMPTOM_BRANCHES[category]!;
+    final hasSubCategories = subMap.keys.length > 1 && subMap.keys.first != 'General';
+
+    return Column(
+      children: [
+        // Main Category Button
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: InkWell(
+            onTap: () => _toggleScreeningAnswer(category),
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              constraints: const BoxConstraints(minHeight: 88),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: isSelected ? activeColor.withOpacity(0.08) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? activeColor : Colors.grey.shade300,
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      question,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected ? activeColor : const Color(0xFF334155),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? activeColor : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected ? activeColor : Colors.grey.shade400,
+                        width: 2,
+                      ),
+                    ),
+                    child: isSelected
+                        ? const Icon(Icons.check, size: 18, color: Colors.white)
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Dynamic Sub-area Question
+        if (isSelected && hasSubCategories)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            margin: const EdgeInsets.only(bottom: 16, left: 24, right: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: activeColor.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: activeColor.withOpacity(0.15)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Where specifically? (Select all that apply)',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: activeColor.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: subMap.keys.map((subCat) {
+                    final isSubSelected = _selectedSubCategories.contains(subCat);
+                    return FilterChip(
+                      label: Text(subCat),
+                      selected: isSubSelected,
+                      selectedColor: activeColor.withOpacity(0.2),
+                      checkmarkColor: activeColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      side: BorderSide(
+                        color: isSubSelected ? activeColor : Colors.grey.shade300,
+                      ),
+                      labelStyle: TextStyle(
+                        color: isSubSelected ? activeColor : Colors.grey.shade700,
+                        fontWeight: isSubSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      onSelected: (bool selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedSubCategories.add(subCat);
+                          } else {
+                            _selectedSubCategories.remove(subCat);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildSymptomCard(ThemeData theme, Color activeColor, Size size) {
-    final category = _prioritizedCategories[_currentStep];
-    final categoryInfo = _getCategoryInfo();
-    final symptoms = SYMPTOM_BRANCHES[category] ?? [];
-    final progress = (_currentStep + 1) / _prioritizedCategories.length;
-    final isHighPriority = _selectedCategoryScreens.contains(category);
+    final stepData = _wizardSteps[_currentStep];
+    final progress = (_currentStep + 1) / _wizardSteps.length;
+    final isHighPriority = _selectedCategoryScreens.contains(stepData.mainCategory);
 
     return Container(
       padding: const EdgeInsets.all(40),
@@ -724,92 +470,128 @@ class _SymptomWizardState extends State<SymptomWizard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Progress bar
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey.shade100,
-            color: activeColor,
-          ),
-          const SizedBox(height: 20),
-
-          // Priority indicator
-          if (isHighPriority)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber),
-              ),
-              child: const Text(
-                '★ High Priority (from screening)',
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontSize: 12,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Step ${_currentStep + 1} of ${_wizardSteps.length}',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: Colors.grey.shade500,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
                 ),
               ),
-            ),
-
-          const SizedBox(height: 12),
-
-          // Question text
-          Text(
-            categoryInfo['name'] ?? '',
-            style: theme.textTheme.displaySmall?.copyWith(fontSize: 28),
+              if (isHighPriority)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.priority_high, size: 14, color: Colors.orange.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Priority Area',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+            ),
+          ),
+          const SizedBox(height: 32),
+          
+          Text(
+            stepData.mainCategory,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+          if (stepData.subCategory != 'General') ...[
+            const SizedBox(height: 8),
+            Text(
+              'Specific Area: ${stepData.subCategory}',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: activeColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
-            categoryInfo['description'] ?? '',
-            style: const TextStyle(color: Colors.grey),
+            'Select all symptoms you are experiencing:',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 32),
 
-          // Symptoms grid (multi-select)
           Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 10,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: symptoms.length,
-              itemBuilder: (context, index) {
-                final symptom = symptoms[index];
-                final isSelected = _selectedSymptoms.contains(symptom);
-                return _buildSymptomTile(
-                  symptom,
-                  isSelected,
-                  activeColor,
-                  theme,
-                );
-              },
-            ),
+            child: stepData.symptoms.isEmpty
+                ? const Center(child: Text('No symptoms available for this category.'))
+                : Scrollbar(
+                    controller: _scrollController, // 1. Attach controller
+                    thumbVisibility: true,         // 2. Forces scrollbar to always show!
+                    thickness: 6.0,                // Optional: make it a bit thicker
+                    radius: const Radius.circular(8),
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      childAspectRatio: 4,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: stepData.symptoms.length,
+                    itemBuilder: (context, index) {
+                      final symptom = stepData.symptoms[index];
+                      final isSelected = _selectedSymptoms.contains(symptom);
+                      return _buildSymptomTile(
+                        symptom,
+                        isSelected,
+                        activeColor,
+                        theme,
+                      );
+                    },
+                  ),
+          ),
           ),
 
-          const SizedBox(height: 24),
-
-          // Selected count
-          Text(
-            'Total selected: ${_selectedSymptoms.length} symptoms',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Navigation buttons
+          const SizedBox(height: 32),
+          // Navigation Buttons with Smart Label
           Row(
             children: [
               Expanded(
+                flex: 1,
                 child: OutlinedButton(
-                  onPressed: _backToScreening,
+                  onPressed: _prevCategory,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     side: BorderSide(color: Colors.grey.shade300),
@@ -817,26 +599,13 @@ class _SymptomWizardState extends State<SymptomWizard> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "← Back to Screening",
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _currentStep > 0 ? _prevCategory : null,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  child: Text(
+                    _currentStep == 0 ? 'Back to Screening' : 'Back',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF475569), 
+                      fontWeight: FontWeight.bold
                     ),
-                  ),
-                  child: const Text(
-                    "← Previous",
-                    style: TextStyle(color: Colors.black54),
                   ),
                 ),
               ),
@@ -854,13 +623,10 @@ class _SymptomWizardState extends State<SymptomWizard> {
                     elevation: 0,
                   ),
                   child: Text(
-                    _currentStep == _prioritizedCategories.length - 1
-                        ? 'Get Results →'
-                        : 'Next →',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    _currentStep < _wizardSteps.length - 1
+                        ? 'Next Category →'
+                        : 'Get Results',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
               ),
@@ -907,7 +673,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: isSelected ? activeColor : const Color(0xFF0F172A),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),

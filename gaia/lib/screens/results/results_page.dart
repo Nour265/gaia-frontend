@@ -645,6 +645,13 @@ class _ResultsPageState extends State<ResultsPage>
                                                                     .gray[900],
                                                               ),
                                                         ),
+                                                        Text(
+                                                              'Confidence: ${(prediction['probability'] * 100).toStringAsFixed(1)}%',
+                                                              style: TextStyle(
+                                                                color: Colors.grey.shade700,
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
+                                                            ),
                                                       ],
                                                     ),
                                                   ),
