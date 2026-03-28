@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:gaia/widgets/navbar.dart';
 import 'package:gaia/screens/results/results_page.dart';
-
+import 'package:gaia/services/auth_session.dart';
 class SymptomWizard extends StatefulWidget {
   const SymptomWizard({super.key});
 
@@ -167,16 +167,27 @@ class _SymptomWizardState extends State<SymptomWizard> {
       });
     } else {
       if (_selectedSymptoms.length >= 5) {
+        // Check if the user is logged in to get their actual age, otherwise default to 25
+        final int assessmentAge = AuthSession.isLoggedIn 
+            ? (AuthSession.user?.age ?? 25) 
+            : 25;
+            
+        // Check if the user is logged in to get their gender, otherwise default to 'other'
+        final String assessmentGender = AuthSession.isLoggedIn 
+            ? (AuthSession.user?.gender ?? 'other').toLowerCase() 
+            : 'other';
+
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ResultsPage(
-              age: 25,
-              gender: 'Male',
+              age: assessmentAge,
+              gender: assessmentGender,
               symptoms: _selectedSymptoms.toList(),
             ),
           ),
         );
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
