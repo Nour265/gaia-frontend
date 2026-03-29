@@ -14,6 +14,7 @@ import '../screens/auth/forgot_password_page.dart';
 import '../screens/profile/profile_page.dart';
 import '../screens/admin/admin_dashboard_page.dart';
 import '../screens/admin/admin_doctors_page.dart';
+import '../screens/admin/admin_users_page.dart';
 import '../screens/Information/info.dart';
 
 // This class centralizes all route names and their corresponding screens.
@@ -45,6 +46,7 @@ class Routes {
   // Admin routes
   static const String adminDashboard = '/admin/dashboard';
   static const String adminDoctors = '/admin/doctors';
+  static const String adminUsers = '/admin/users';
 
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
@@ -85,5 +87,6 @@ class Routes {
     // Admin routes
     adminDashboard: (_) => const AdminDashboardPage(),
     adminDoctors: (_) => const AdminDoctorsPage(),
+    adminUsers: (_) => const AdminUsersPage(),
   };
 }

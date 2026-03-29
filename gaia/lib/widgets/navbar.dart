@@ -137,14 +137,13 @@ class ImageLinks extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 _LoginButton(
-                  label: 'Doctors',
-                  icon: Icons.medical_services_outlined,
+                  label: 'Users',
+                  icon: Icons.people_outlined,
                   textTheme: textTheme,
                   onPressed: () {
-                    Navigator.pushNamed(context, Routes.adminDoctors);
+                    Navigator.pushNamed(context, Routes.adminUsers);
                   },
                 ),
-                const SizedBox(width: 12),
               ],
               _LoginButton(
                 label: 'Profile',

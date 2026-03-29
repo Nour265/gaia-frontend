@@ -117,12 +117,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pushNamed(context, Routes.adminDoctors);
+                  Navigator.pushNamed(context, Routes.adminUsers);
                 },
-                icon: const Icon(Icons.medical_services_outlined),
-                label: const Text('Manage Doctors'),
+                icon: const Icon(Icons.people_outlined),
+                label: const Text('Manage Users'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.turquoise,
+                  backgroundColor: AppColors.purple,
                   foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.sm),

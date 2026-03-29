@@ -291,6 +291,81 @@ class ApiService {
     }
   }
 
+  // User management endpoints
+  static Future<List<dynamic>> getUsers() async {
+    final response = await _get(Uri.parse("$baseUrl/admin/users"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> createUser({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+    String? specialty,
+    String? phone,
+    String? location,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/admin/users"),
+      body: jsonEncode({
+        "name": name,
+        "email": email,
+        "password": password,
+        "role": role,
+        if (specialty != null && specialty.isNotEmpty) "specialty": specialty,
+        if (phone != null && phone.isNotEmpty) "phone": phone,
+        if (location != null && location.isNotEmpty) "location": location,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateUserRole({
+    required int userId,
+    required String role,
+  }) async {
+    final response = await _patch(
+      Uri.parse("$baseUrl/admin/users/$userId/role"),
+      body: jsonEncode({"role": role}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateUserStatus({
+    required int userId,
+    required bool isActive,
+  }) async {
+    final response = await _patch(
+      Uri.parse("$baseUrl/admin/users/$userId/status"),
+      body: jsonEncode({"is_active": isActive}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
+  static Future<void> deleteUser({required int userId}) async {
+    final response = await _delete(Uri.parse("$baseUrl/admin/users/$userId"));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw _buildApiException("Admin", response);
+    }
+  }
+
   static Exception _buildApiException(String prefix, http.Response response) {
     final status = response.statusCode;
     final body = response.body.trim();
@@ -369,6 +444,15 @@ class ApiService {
           url,
           headers: _headers(),
           body: body,
+        )
+        .timeout(_requestTimeout);
+  }
+
+  static Future<http.Response> _delete(Uri url) {
+    return http
+        .delete(
+          url,
+          headers: _headers(),
         )
         .timeout(_requestTimeout);
   }
