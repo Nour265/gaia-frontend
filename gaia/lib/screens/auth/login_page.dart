@@ -137,7 +137,12 @@ class _LoginPageState extends State<LoginPage> {
     if (user != null && user.isAdmin) {
       Navigator.pushReplacementNamed(context, Routes.adminDashboard);
     } else {
-      Navigator.pushReplacementNamed(context, Routes.landing);
+      // NEW LOGIC: Check if it is running on Web or Mobile
+      if (kIsWeb) {
+        Navigator.pushReplacementNamed(context, Routes.landing);
+      } else {
+        Navigator.pushReplacementNamed(context, '/mobile_dashboard');
+      }
     }
   }
 
@@ -178,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const GaiaNavBarAppBar(),
+      appBar: kIsWeb ? const GaiaNavBarAppBar() : null,
       body: Stack(
         children: [
           Container(
@@ -359,18 +364,54 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, Routes.signup);
-                            },
-                            child: Text(
-                              "New here? Create an account",
-                              style: textTheme.labelLarge?.copyWith(
-                                color: AppColors.turquoise,
-                                fontWeight: FontWeight.w600,
+                          // Web: Show the clickable Sign Up button
+                          if (kIsWeb)
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, Routes.signup);
+                              },
+                              child: Text(
+                                "New here? Create an account",
+                                style: textTheme.labelLarge?.copyWith(
+                                  color: AppColors.turquoise,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          
+                          // Mobile: Show the text directing them to the website
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(top: AppSpacing.sm),
+                              child: Center(
+                                child: Text(
+                                  "Don't have an account?\nPlease visit the GAIA website to register.",
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.gray.shade800,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          // 🛠️ DEV BYPASS BUTTON (Only visible in debug mode on mobile devices)
+                          if (kDebugMode && !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS))
+                            Padding(
+                              padding: const EdgeInsets.only(top: AppSpacing.lg),
+                              child: TextButton(
+                                onPressed: () {
+                                  // Navigates straight to the mobile dashboard, bypassing auth
+                                  Navigator.pushReplacementNamed(context, '/mobile_dashboard');
+                                },
+                                child: const Text(
+                                  "🛠️ DEV BYPASS: Skip Login",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),

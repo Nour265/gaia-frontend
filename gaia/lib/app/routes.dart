@@ -17,6 +17,7 @@ import '../screens/admin/admin_doctors_page.dart';
 import '../screens/admin/admin_users_page.dart';
 import '../screens/admin/admin_admins_page.dart';
 import '../screens/Information/info.dart';
+import '../screens/step_tracking/step_tracker.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
