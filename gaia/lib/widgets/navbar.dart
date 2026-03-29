@@ -135,15 +135,6 @@ class ImageLinks extends StatelessWidget {
                     Navigator.pushNamed(context, Routes.adminDashboard);
                   },
                 ),
-                const SizedBox(width: 12),
-                _LoginButton(
-                  label: 'Users',
-                  icon: Icons.people_outlined,
-                  textTheme: textTheme,
-                  onPressed: () {
-                    Navigator.pushNamed(context, Routes.adminUsers);
-                  },
-                ),
               ],
               _LoginButton(
                 label: 'Profile',

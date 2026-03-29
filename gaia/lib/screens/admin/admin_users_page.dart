@@ -16,21 +16,29 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   bool _isLoading = true;
   String? _errorMessage;
   List<dynamic> _users = [];
+  bool? _activeFilter; // null = all, true = active only, false = inactive only
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    _activeFilter = args?['filterActive'] as bool?;
     _loadUsers();
   }
 
   Future<void> _loadUsers() async {
     try {
-      final users = await ApiService.getUsers();
+      final all = await ApiService.getUsers();
+      if (!mounted) return;
+      final patients = all.where((u) => u['role'] == 'user').toList();
       setState(() {
-        _users = users;
+        _users = _activeFilter == null
+            ? patients
+            : patients.where((u) => (u['is_active'] as bool? ?? true) == _activeFilter).toList();
         _isLoading = false;
       });
     } catch (error) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = _friendlyError(error);
         _isLoading = false;
@@ -77,7 +85,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
 
     try {
       await ApiService.updateUserRole(userId: userId, role: selected);
-      _loadUsers();
+      await _loadUsers();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -99,7 +107,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   Future<void> _toggleStatus(int userId, bool currentStatus) async {
     try {
       await ApiService.updateUserStatus(userId: userId, isActive: !currentStatus);
-      _loadUsers();
+      await _loadUsers();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -145,7 +153,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
 
     try {
       await ApiService.deleteUser(userId: userId);
-      _loadUsers();
+      await _loadUsers();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

@@ -4,7 +4,9 @@ import 'package:gaia/values/values.dart';
 import 'package:gaia/constants/specialties.dart';
 
 class CreateUserDialog extends StatefulWidget {
-  const CreateUserDialog({Key? key}) : super(key: key);
+  const CreateUserDialog({Key? key, this.initialRole = 'user'}) : super(key: key);
+
+  final String initialRole;
 
   @override
   State<CreateUserDialog> createState() => _CreateUserDialogState();
@@ -17,13 +19,19 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
-  String _selectedRole = 'user';
+  late String _selectedRole;
   String? _selectedSpecialty;
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
 
   static const _roles = ['user', 'doctor', 'admin'];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.initialRole;
+  }
 
   @override
   void dispose() {
@@ -86,7 +94,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
     switch (role) {
       case 'admin': return AppColors.purple;
       case 'doctor': return AppColors.turquoise;
-      default: return AppColors.gray.shade600;
+      default: return AppColors.gray.shade700;
     }
   }
 
@@ -107,6 +115,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
       child: Container(
         width: isWide ? 500 : double.infinity,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Form(
@@ -196,6 +205,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
                 // Role selector
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Role',
                     prefixIcon: Icon(_roleIcon(_selectedRole), color: _roleColor(_selectedRole)),
@@ -235,6 +245,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: _selectedSpecialty,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Specialty',
                       prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.turquoise),
