@@ -27,17 +27,13 @@ class MyApp extends StatelessWidget {
       theme: app_theme.lightThemeData,
       title: 'GAIA',
       
-      // LOGIC: 
-      // 1. If Web -> Go to Landing Page (No force login)
-      // 2. If Mobile + Logged In -> Go to Dashboard
-      // 3. If Mobile + Not Logged In -> Force Login Page
-      initialRoute: kIsWeb 
-          ? Routes.landing 
-          : (isLoggedIn ? '/mobile_dashboard' : Routes.login),
+      initialRoute: kIsWeb ? Routes.landing : '/',
       
       routes: {
         ...Routes.map,
         '/mobile_dashboard': (_) => const MobileDashboard(),
+
+        if (!kIsWeb) '/': (context) => isLoggedIn ? const MobileDashboard() : const LoginPage(),
       },
     );
   }

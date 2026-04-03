@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -413,6 +414,11 @@ class _ResultsPageState extends State<ResultsPage>
   Future<void> _generateAndShareReport(Map<String, dynamic> data) async {
     final pdf = pw.Document();
     
+    // --- 1. LOAD THE IMAGE FROM ASSETS ---
+    final ByteData imageBytes = await rootBundle.load('assets/images/logo.png');
+    final Uint8List imageData = imageBytes.buffer.asUint8List();
+    final logo = pw.MemoryImage(imageData);
+
     // Generate a timestamp and a random Reference ID
     final String date = DateFormat('MMMM dd, yyyy - hh:mm a').format(DateTime.now());
     final String refId = 'GAIA-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
@@ -445,18 +451,26 @@ class _ResultsPageState extends State<ResultsPage>
         },
         
         build: (context) => [
-          // --- HEADER ---
+          // --- HEADER WITH LOGO ---
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('GAIA HEALTH', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo700)),
-                  pw.SizedBox(height: 4),
-                  pw.Text('Rafik Hariri University - Medical AI Triage', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
-                  pw.Text('Beirut, Lebanon', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                  // --- 2. DISPLAY LOGO ---
+                  pw.Image(logo, width: 45, height: 45), 
+                  pw.SizedBox(width: 15),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('GAIA HEALTH', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo700)),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Rafik Hariri University - Medical AI Triage', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                      pw.Text('Beirut, Lebanon', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                    ],
+                  ),
                 ],
               ),
               pw.Column(
@@ -545,7 +559,6 @@ class _ResultsPageState extends State<ResultsPage>
                 child: pw.Row(
                   children: [
                     pw.Text('• ${pred['disease']}', style: const pw.TextStyle(fontSize: 12)),
-                    // Note: This internal Spacer is fine because it's inside a horizontal Row, not the vertical MultiPage list!
                     pw.Spacer(), 
                     pw.Text('Probability: ${(pred['probability'] * 100).toStringAsFixed(1)}%', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
                   ]
@@ -557,7 +570,6 @@ class _ResultsPageState extends State<ResultsPage>
       ),
     );
 
-    // This triggers the native iOS/Android print and share dialog!
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
       name: 'Gaia_Assessment_$refId.pdf',

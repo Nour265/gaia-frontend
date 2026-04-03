@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       if (kIsWeb && _googleClientId.isEmpty) {
         throw Exception(
-          "Google Web client ID is missing. Run with --dart-define=GAIA_GOOGLE_CLIENT_ID=<your_web_client_id>.",
+          "Google Web client ID is missing. Run with --dart-define=GAIA_GOOGLE_CLIENT_ID=859555287794-ecjlafnvnccemsgqj715ho4spfm55d3h.apps.googleusercontent.com.",
         );
       }
 
@@ -141,7 +141,11 @@ class _LoginPageState extends State<LoginPage> {
       if (kIsWeb) {
         Navigator.pushReplacementNamed(context, Routes.landing);
       } else {
-        Navigator.pushReplacementNamed(context, '/mobile_dashboard');
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/mobile_dashboard', 
+          (route) => false,
+        );
       }
     }
   }
@@ -182,7 +186,9 @@ class _LoginPageState extends State<LoginPage> {
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       appBar: kIsWeb ? const GaiaNavBarAppBar() : null,
       body: Stack(
         children: [
@@ -400,7 +406,11 @@ class _LoginPageState extends State<LoginPage> {
                               child: TextButton(
                                 onPressed: () {
                                   // Navigates straight to the mobile dashboard, bypassing auth
-                                  Navigator.pushReplacementNamed(context, '/mobile_dashboard');
+                                  Navigator.pushNamedAndRemoveUntil(
+                                      context, 
+                                      '/mobile_dashboard', 
+                                      (Route<dynamic> route) => false,
+                                    );
                                 },
                                 child: const Text(
                                   "🛠️ DEV BYPASS: Skip Login",
@@ -422,7 +432,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   InputDecoration _inputDecoration({

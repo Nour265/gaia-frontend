@@ -166,7 +166,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
         _currentStep++;
       });
     } else {
-      if (_selectedSymptoms.length >= 5) {
+      if (_selectedSymptoms.length >= 3) {
         // Check if the user is logged in to get their actual age, otherwise default to 25
         final int assessmentAge = AuthSession.isLoggedIn 
             ? (AuthSession.user?.age ?? 25) 
@@ -193,7 +193,7 @@ class _SymptomWizardState extends State<SymptomWizard> {
           SnackBar(
             behavior: SnackBarBehavior.floating,
             content: Text(
-              'Please select at least 5 symptoms for an accurate prediction. (Selected: ${_selectedSymptoms.length})',
+              'Please select at least 3 symptoms for an accurate prediction. (Selected: ${_selectedSymptoms.length})',
               style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             backgroundColor: Colors.red.shade600,
