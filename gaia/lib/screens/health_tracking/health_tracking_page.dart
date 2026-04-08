@@ -137,10 +137,10 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   };
 
   static const Map<String, String> _periodLabels = {
-    '7d': '7D',
-    '30d': '30D',
-    '90d': '90D',
-    'all': 'All',
+    '7d': 'Last 7 Days',
+    '30d': 'Last 30 Days',
+    '90d': 'Last 90 Days',
+    'all': 'All Time',
   };
 
   bool _isLoading = false;
@@ -712,40 +712,36 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: const GaiaNavBarAppBar(),
-      body: Column(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openMetricDialog,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Log Metric'),
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: _isLoading
+            ? _buildLoadingState()
+            : _errorMessage != null
+            ? _buildErrorState()
+            : _buildContent(),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
-            child: Wrap(
-              runSpacing: 12,
-              spacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text('Health Tracking', style: textTheme.headlineSmall),
-                OutlinedButton.icon(
-                  onPressed: _loadHealthMetrics,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Refresh'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _openMetricDialog(),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Add Entry'),
-                ),
-              ],
-            ),
+          SizedBox(
+            height: 36,
+            width: 36,
+            child: CircularProgressIndicator(strokeWidth: 3),
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                ? _buildErrorState()
-                : _buildContent(),
-          ),
+          SizedBox(height: AppSpacing.md),
+          Text('Preparing your health dashboard...'),
         ],
       ),
     );
@@ -756,21 +752,48 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded, size: 52, color: AppColors.pink),
-            const SizedBox(height: AppSpacing.md),
-            Text('Unable to load health metrics', style: textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Text(_errorMessage ?? 'Unknown error', style: textTheme.bodyMedium),
-            const SizedBox(height: AppSpacing.md),
-            ElevatedButton.icon(
-              onPressed: _loadHealthMetrics,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
-            ),
-          ],
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 520),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            color: AppColors.white,
+            border: Border.all(color: AppColors.gray[200]!),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gray[900]!.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 54,
+                color: AppColors.pink,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Unable to load health metrics',
+                style: textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                _errorMessage ?? 'Unknown error',
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ElevatedButton.icon(
+                onPressed: _loadHealthMetrics,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -782,10 +805,23 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
       onRefresh: _loadHealthMetrics,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final horizontalPadding = constraints.maxWidth >= 1280
+              ? AppSpacing.xl
+              : constraints.maxWidth >= 840
+              ? AppSpacing.lg
+              : AppSpacing.md;
+
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AppSpacing.lg,
+              horizontalPadding,
+              90,
+            ),
             children: [
+              _buildCommandBar(filtered),
+              const SizedBox(height: AppSpacing.md),
               _buildHeroCard(filtered),
               const SizedBox(height: AppSpacing.md),
               _buildFilterSection(),
@@ -808,16 +844,73 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     );
   }
 
+  Widget _buildCommandBar(List<HealthMetric> filtered) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
+        border: Border.all(color: AppColors.gray[200]!),
+      ),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+            width: 320,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Health Tracking Hub', style: textTheme.headlineSmall),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${filtered.length} logs in ${_periodLabels[_selectedPeriod]}',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.gray[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: _loadHealthMetrics,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh data'),
+          ),
+          ElevatedButton.icon(
+            onPressed: _openMetricDialog,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add entry'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroCard(List<HealthMetric> metrics) {
     final textTheme = Theme.of(context).textTheme;
     final score = _wellnessScore(metrics);
     final streak = _currentStreak();
     final activeDays = _activeDaysCount(metrics);
+    final periodDays = _selectedPeriod == 'all'
+        ? max(activeDays, 1)
+        : int.parse(_selectedPeriod.replaceAll(RegExp(r'[^0-9]'), ''));
+    final consistency = (activeDays / max(periodDays, 1)).clamp(0, 1);
+    final scoreColor = score >= 85
+        ? AppColors.turquoise
+        : score >= 70
+        ? AppColors.orange
+        : score >= 55
+        ? AppColors.purple
+        : AppColors.pink;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -827,37 +920,97 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             AppColors.pink.withOpacity(0.10),
           ],
         ),
-        border: Border.all(color: AppColors.gray[200]!),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Wrap(
+        spacing: AppSpacing.md,
+        runSpacing: AppSpacing.md,
         children: [
-          Text('Health Overview', style: textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Score ${score.toStringAsFixed(0)} • ${_scoreLabel(score)}',
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+          SizedBox(
+            width: 520,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Wellness Pulse', style: textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _scoreLabel(score),
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Your wellness score is ${score.toStringAsFixed(0)} based on the latest values across tracked metrics.',
+                  style: textTheme.bodyLarge,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    _summaryPill(
+                      icon: Icons.local_fire_department_outlined,
+                      text: '$streak day streak',
+                    ),
+                    _summaryPill(
+                      icon: Icons.event_available_outlined,
+                      text: '$activeDays active days',
+                    ),
+                    _summaryPill(
+                      icon: Icons.track_changes_rounded,
+                      text: '${(consistency * 100).round()}% consistency',
+                    ),
+                    _summaryPill(
+                      icon: Icons.list_alt_rounded,
+                      text: '${metrics.length} total entries',
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              _summaryPill(
-                icon: Icons.local_fire_department_outlined,
-                text: '$streak day streak',
-              ),
-              _summaryPill(
-                icon: Icons.event_available_outlined,
-                text: '$activeDays active days',
-              ),
-              _summaryPill(
-                icon: Icons.list_alt_rounded,
-                text: '${metrics.length} entries',
-              ),
-            ],
+          Container(
+            width: 280,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.72),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.white.withOpacity(0.7)),
+            ),
+            child: Row(
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      height: 78,
+                      width: 78,
+                      child: CircularProgressIndicator(
+                        value: score / 100,
+                        strokeWidth: 8,
+                        backgroundColor: AppColors.gray[200],
+                        valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                      ),
+                    ),
+                    Text(
+                      '${score.round()}',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Score for ${_periodLabels[_selectedPeriod]}',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.gray[800],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -873,7 +1026,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
       decoration: BoxDecoration(
         color: AppColors.white.withOpacity(0.65),
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.gray[200]!),
+        border: Border.all(color: AppColors.white.withOpacity(0.75)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -891,13 +1044,25 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.gray[100],
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.gray[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Filters', style: textTheme.titleMedium),
+          Row(
+            children: [
+              Text('Focus Filters', style: textTheme.titleMedium),
+              const Spacer(),
+              if (_selectedTypeFilter != 'all')
+                TextButton.icon(
+                  onPressed: () => setState(() => _selectedTypeFilter = 'all'),
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear metric filter'),
+                ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -915,7 +1080,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildTypeFilterChip(label: 'All', value: 'all'),
+                _buildTypeFilterChip(label: 'All metrics', value: 'all'),
                 const SizedBox(width: AppSpacing.sm),
                 ..._metricConfigs.values.map(
                   (config) => Padding(
@@ -942,6 +1107,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
       selectedColor: AppColors.turquoise.withOpacity(0.25),
       onSelected: (_) => setState(() => _selectedTypeFilter = value),
       checkmarkColor: AppColors.black,
+      side: BorderSide(color: AppColors.gray[300]!),
     );
   }
 
@@ -949,19 +1115,24 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final sleep = _averageForType(filtered, 'sleep');
     final exercise = _averageForType(filtered, 'exercise');
     final mood = _averageForType(filtered, 'mood');
+    final periodDays = _selectedPeriod == 'all'
+        ? max(_activeDaysCount(filtered), 1)
+        : int.parse(_selectedPeriod.replaceAll(RegExp(r'[^0-9]'), ''));
+    final coverage = ((_activeDaysCount(filtered) / max(periodDays, 1)) * 100)
+        .round();
 
     final cards = [
       _StatCardData(
         title: 'Entries',
         value: '${filtered.length}',
-        subtitle: 'Total logs in selected filter',
+        subtitle: 'Total logs in this view',
         icon: Icons.fact_check_outlined,
         color: AppColors.turquoise,
       ),
       _StatCardData(
-        title: 'Active Days',
-        value: '${_activeDaysCount(filtered)}',
-        subtitle: 'Days with at least one metric',
+        title: 'Coverage',
+        value: '$coverage%',
+        subtitle: '${_activeDaysCount(filtered)} active days',
         icon: Icons.calendar_month_outlined,
         color: AppColors.orange,
       ),
@@ -988,44 +1159,78 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
       ),
     ];
 
+    final width = MediaQuery.of(context).size.width;
+    final columns = width >= 1320
+        ? 4
+        : width >= 980
+        ? 3
+        : width >= 650
+        ? 2
+        : 1;
+    final totalSpacing = AppSpacing.md * (columns - 1);
+    final cardWidth = ((width - totalSpacing - (AppSpacing.lg * 2)) / columns)
+        .clamp(220, 360)
+        .toDouble();
+
     return Wrap(
       spacing: AppSpacing.md,
       runSpacing: AppSpacing.md,
-      children: cards.map(_buildQuickStatCard).toList(),
+      children: cards
+          .map(
+            (card) =>
+                SizedBox(width: cardWidth, child: _buildQuickStatCard(card)),
+          )
+          .toList(),
     );
   }
 
   Widget _buildQuickStatCard(_StatCardData data) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 210, maxWidth: 280),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.gray[200]!),
-          color: AppColors.white,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(data.icon, color: data.color, size: 20),
-                const SizedBox(width: AppSpacing.sm),
-                Text(data.title, style: Theme.of(context).textTheme.titleSmall),
-              ],
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
+        border: Border.all(color: AppColors.gray[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray[900]!.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 34,
+                width: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: data.color.withOpacity(0.18),
+                ),
+                child: Icon(data.icon, size: 18, color: data.color),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(data.title, style: textTheme.titleSmall)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            data.value,
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              data.value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(data.subtitle, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            data.subtitle,
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+          ),
+        ],
       ),
     );
   }
@@ -1033,33 +1238,60 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   Widget _buildAlertsSection(List<HealthMetric> filtered) {
     final textTheme = Theme.of(context).textTheme;
     final alerts = _alerts(filtered);
+    final todayKey = _dayKey(DateTime.now());
+    final loggedToday = _metrics
+        .where((m) => _dayKey(m.date) == todayKey)
+        .map((m) => m.type)
+        .toSet();
+    final missingToday = _metricConfigs.keys
+        .where((type) => !loggedToday.contains(type))
+        .take(4)
+        .toList();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        color: AppColors.gray[100],
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.white, AppColors.turquoise.withOpacity(0.08)],
+        ),
         border: Border.all(color: AppColors.gray[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Highlights', style: textTheme.titleMedium),
+          Text('Coach Feed', style: textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Signals to prioritize today',
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+          ),
           const SizedBox(height: AppSpacing.sm),
           if (alerts.isEmpty)
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: AppColors.turquoise,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                const Expanded(
-                  child: Text(
-                    'No concerning patterns found in the selected range.',
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.turquoise.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: AppColors.turquoise,
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppSpacing.sm),
+                  const Expanded(
+                    child: Text(
+                      'No concerning patterns found in this period. Keep your routine consistent.',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ...alerts.map(
             (alert) => Container(
@@ -1067,8 +1299,8 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
               margin: const EdgeInsets.only(top: AppSpacing.sm),
               padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: alert.color.withOpacity(0.11),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                color: alert.color.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1094,6 +1326,27 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Quick wins for today', style: textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
+          if (missingToday.isEmpty)
+            Text(
+              'You have already logged all tracked metrics today.',
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+            )
+          else
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: missingToday.map((type) {
+                final config = _metricConfigs[type]!;
+                return ActionChip(
+                  avatar: Icon(config.icon, size: 16, color: config.color),
+                  label: Text('Log ${config.label}'),
+                  onPressed: () => _openMetricDialog(presetType: config.key),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
@@ -1109,111 +1362,236 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
         ).length.compareTo(_entriesForType(filtered, a).length),
       );
     final selectedTypes = _selectedTypeFilter == 'all'
-        ? rankedTypes.take(4).toList()
+        ? rankedTypes.take(screenWidth >= 1100 ? 6 : 4).toList()
         : <String>[_selectedTypeFilter];
+    final columns = screenWidth >= 1400
+        ? 3
+        : screenWidth >= 980
+        ? 2
+        : 1;
+    final totalSpacing = AppSpacing.md * (columns - 1);
+    final cardWidth = ((screenWidth - totalSpacing) / columns)
+        .clamp(280, 500)
+        .toDouble();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Trend Insights', style: textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.sm),
-        if (selectedTypes.isEmpty)
-          const Text('No trend data available. Add entries to unlock insights.')
-        else
-          Wrap(
-            spacing: AppSpacing.md,
-            runSpacing: AppSpacing.md,
-            children: selectedTypes.map((type) {
-              final config = _metricConfigs[type]!;
-              final entries = _entriesForType(filtered, type);
-              final history = entries.reversed
-                  .take(10)
-                  .map((m) => m.value)
-                  .toList();
-              final trend = _trendPercent(history);
-              final positive = _isPositiveTrend(type, trend);
-              final trendColor = trend == 0
-                  ? AppColors.gray[700]!
-                  : positive
-                  ? AppColors.turquoise
-                  : AppColors.pink;
-              final latest = entries.isEmpty ? null : entries.first;
-              final average = _averageForType(filtered, type);
-              final cardWidth = screenWidth > 880
-                  ? (screenWidth - AppSpacing.md * 3) / 2
-                  : screenWidth;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.gray[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Metric Deep Dive', style: textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Live trends, consistency, and latest values for your top metrics.',
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (selectedTypes.isEmpty)
+            const Text(
+              'No trend data available. Add entries to unlock insights.',
+            )
+          else
+            Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.md,
+              children: selectedTypes.map((type) {
+                final config = _metricConfigs[type]!;
+                final entries = _entriesForType(filtered, type);
+                final history = entries.reversed
+                    .take(10)
+                    .map((m) => m.value)
+                    .toList();
+                final trend = _trendPercent(history);
+                final positive = _isPositiveTrend(type, trend);
+                final trendColor = trend == 0
+                    ? AppColors.gray[700]!
+                    : positive
+                    ? AppColors.turquoise
+                    : AppColors.pink;
+                final latest = entries.isEmpty ? null : entries.first;
+                final average = _averageForType(filtered, type);
+                final periodDays = _selectedPeriod == 'all'
+                    ? max(_activeDaysCount(filtered), 1)
+                    : int.parse(
+                        _selectedPeriod.replaceAll(RegExp(r'[^0-9]'), ''),
+                      );
+                final consistency =
+                    (entries.map((e) => _dayKey(e.date)).toSet().length /
+                            max(periodDays, 1))
+                        .clamp(0, 1);
+                final statusColor = latest == null
+                    ? AppColors.gray[700]!
+                    : latest.value < config.healthyMin
+                    ? AppColors.orange
+                    : latest.value > config.healthyMax
+                    ? AppColors.pink
+                    : AppColors.turquoise;
 
-              return SizedBox(
-                width: cardWidth,
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.gray[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(config.icon, color: config.color),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              config.label,
-                              style: textTheme.titleSmall,
+                return SizedBox(
+                  width: cardWidth,
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      color: AppColors.gray[100],
+                      border: Border.all(color: AppColors.gray[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: config.color.withOpacity(0.18),
+                              child: Icon(
+                                config.icon,
+                                color: config.color,
+                                size: 18,
+                              ),
                             ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                config.label,
+                                style: textTheme.titleSmall,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.xl,
+                                ),
+                                color: trendColor.withOpacity(0.12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    trend == 0
+                                        ? Icons.trending_flat_rounded
+                                        : trend > 0
+                                        ? Icons.trending_up_rounded
+                                        : Icons.trending_down_rounded,
+                                    size: 16,
+                                    color: trendColor,
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Text(
+                                    '${trend >= 0 ? '+' : ''}${trend.toStringAsFixed(1)}%',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: trendColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          latest == null
+                              ? '--'
+                              : '${_formatValue(latest.value, config.decimals)} ${config.unit}',
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          Icon(
-                            trend == 0
-                                ? Icons.trending_flat_rounded
-                                : trend > 0
-                                ? Icons.trending_up_rounded
-                                : Icons.trending_down_rounded,
-                            color: trendColor,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          latest == null
+                              ? 'No recent entry'
+                              : 'Logged ${_formatEntryDate(latest.date)}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.gray[700],
                           ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '${trend >= 0 ? '+' : ''}${trend.toStringAsFixed(1)}%',
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                          ),
+                          child: Text(
+                            latest == null
+                                ? 'No recent value'
+                                : latest.value < config.healthyMin
+                                ? 'Below healthy range'
+                                : latest.value > config.healthyMax
+                                ? 'Above healthy range'
+                                : 'In healthy range',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: trendColor,
+                              color: statusColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        latest == null
-                            ? 'No entries'
-                            : 'Latest: ${_formatValue(latest.value, config.decimals)} ${config.unit}',
-                        style: textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Average: ${_formatValue(average, config.decimals)} ${config.unit}',
-                        style: textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildMiniBars(history, config.color),
-                    ],
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Goal: ${_goalText(config)}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.gray[700],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: LinearProgressIndicator(
+                            minHeight: 8,
+                            value: latest == null
+                                ? 0
+                                : _goalProgress(config, latest.value),
+                            backgroundColor: AppColors.gray[200],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              config.color,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Consistency ${(consistency * 100).round()}% - Avg ${_formatValue(average, config.decimals)} ${config.unit}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.gray[700],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _buildMiniBars(history, config.color),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-      ],
+                );
+              }).toList(),
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildMiniBars(List<double> history, Color color) {
     if (history.isEmpty) {
-      return Container(
-        height: 48,
-        alignment: Alignment.centerLeft,
-        child: const Text('Not enough data'),
+      return SizedBox(
+        height: 52,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Not enough history yet',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
       );
     }
 
@@ -1222,12 +1600,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final spread = max(maxValue - minValue, 0.001);
 
     return SizedBox(
-      height: 56,
+      height: 58,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: history.map((value) {
           final normalized = ((value - minValue) / spread).clamp(0.0, 1.0);
-          final barHeight = 10 + normalized * 40;
+          final barHeight = 8 + (normalized * 46);
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1235,7 +1613,11 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                 height: barHeight,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppRadius.sm),
-                  color: color.withOpacity(0.25 + (normalized * 0.6)),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [color.withOpacity(0.35), color.withOpacity(0.85)],
+                  ),
                 ),
               ),
             ),
@@ -1254,13 +1636,19 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
         border: Border.all(color: AppColors.gray[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Goals Progress', style: textTheme.titleMedium),
+          Text('Goal Board', style: textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'How close each metric is to your target zone.',
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+          ),
           const SizedBox(height: AppSpacing.sm),
           ...types.map((type) {
             final config = _metricConfigs[type]!;
@@ -1285,7 +1673,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                       const Spacer(),
                       Text(
                         latest == null
-                            ? 'No logs yet'
+                            ? 'No logs'
                             : '${_formatValue(value, config.decimals)} ${config.unit}',
                         style: textTheme.bodyMedium,
                       ),
@@ -1324,13 +1712,19 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        color: AppColors.gray[100],
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
+        border: Border.all(color: AppColors.gray[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Quick Log', style: textTheme.titleMedium),
+          Text('Quick Log Shortcuts', style: textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Tap any metric to add a new entry immediately.',
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.gray[700]),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -1350,102 +1744,184 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
 
   Widget _buildLogsSection(List<HealthMetric> filtered) {
     final textTheme = Theme.of(context).textTheme;
+    final logs = filtered.take(40).toList();
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
         border: Border.all(color: AppColors.gray[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Recent Entries', style: textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          if (filtered.isEmpty)
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Logbook Timeline', style: textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '${logs.length} most recent entries shown',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.gray[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _openMetricDialog(
+                  presetType: _selectedTypeFilter == 'all'
+                      ? null
+                      : _selectedTypeFilter,
+                ),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add entry'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (logs.isEmpty)
             _buildEmptyLogsState()
           else
             ListView.separated(
-              itemCount: filtered.length,
+              itemCount: logs.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (_, __) => const Divider(height: AppSpacing.lg),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
-                final metric = filtered[index];
+                final metric = logs[index];
                 final config = _metricConfigs[metric.type];
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: (config?.color ?? AppColors.gray)
-                          .withOpacity(0.12),
-                      child: Icon(
-                        config?.icon ?? Icons.health_and_safety_outlined,
-                        color: config?.color ?? AppColors.gray[800],
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  metric.name,
-                                  style: textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.gray[200]!),
+                          color: AppColors.gray[100],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 92,
+                              decoration: BoxDecoration(
+                                color: config?.color ?? AppColors.gray[700]!,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(AppRadius.md),
+                                  bottomLeft: Radius.circular(AppRadius.md),
                                 ),
                               ),
-                              Text(
-                                '${_formatValue(metric.value, config?.decimals ?? 1)} ${metric.unit}',
-                                style: textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            _formatEntryDate(metric.date),
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.gray[700],
                             ),
-                          ),
-                          if (metric.note != null &&
-                              metric.note!.trim().isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              metric.note!,
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontStyle: FontStyle.italic,
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppSpacing.sm),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 17,
+                                      backgroundColor:
+                                          (config?.color ?? AppColors.gray)
+                                              .withOpacity(0.18),
+                                      child: Icon(
+                                        config?.icon ??
+                                            Icons.health_and_safety_outlined,
+                                        color:
+                                            config?.color ??
+                                            AppColors.gray[800],
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  metric.name,
+                                                  style: textTheme.bodyLarge
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                ),
+                                              ),
+                                              Text(
+                                                '${_formatValue(metric.value, config?.decimals ?? 1)} ${metric.unit}',
+                                                style: textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: AppSpacing.xs),
+                                          Text(
+                                            _formatEntryDate(metric.date),
+                                            style: textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: AppColors.gray[700],
+                                                ),
+                                          ),
+                                          if (metric.note != null &&
+                                              metric.note!
+                                                  .trim()
+                                                  .isNotEmpty) ...[
+                                            const SizedBox(
+                                              height: AppSpacing.xs,
+                                            ),
+                                            Text(
+                                              metric.note!,
+                                              style: textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                    color: AppColors.gray[800],
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'edit') {
+                                          _openMetricDialog(editing: metric);
+                                        } else if (value == 'delete') {
+                                          _deleteMetric(metric);
+                                        }
+                                      },
+                                      itemBuilder: (_) => const [
+                                        PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Text('Edit'),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _openMetricDialog(editing: metric);
-                        } else if (value == 'delete') {
-                          _deleteMetric(metric);
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Text('Delete'),
-                        ),
-                      ],
                     ),
                   ],
                 );
@@ -1477,7 +1953,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                 : _selectedTypeFilter,
           ),
           icon: const Icon(Icons.add_rounded),
-          label: const Text('Add Entry'),
+          label: const Text('Add entry'),
         ),
       ],
     );
@@ -1501,11 +1977,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     final day = DateUtils.dateOnly(date);
     final today = DateUtils.dateOnly(now);
     final diff = today.difference(day).inDays;
+    final time = '${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
     if (diff == 0) {
-      return 'Today • ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+      return 'Today - $time';
     }
     if (diff == 1) {
-      return 'Yesterday • ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+      return 'Yesterday - $time';
     }
     if (diff < 7) {
       return '$diff days ago';
