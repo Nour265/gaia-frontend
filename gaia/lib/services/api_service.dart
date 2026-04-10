@@ -4,7 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:gaia/services/auth_session.dart';
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000";
+  // Get base URL from build environment or use defaults
+  // For Android/iOS: pass --dart-define=API_BASE_URL=http://YOUR_IP:8000
+  // For web/desktop: defaults to localhost:8000 (safe for local dev)
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8000',
+  );
   static const Duration _requestTimeout = Duration(seconds: 20);
 
   static Future<Map<String, dynamic>> createAssessment({

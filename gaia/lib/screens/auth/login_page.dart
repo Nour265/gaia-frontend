@@ -296,24 +296,26 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  Routes.forgotPassword,
-                                );
-                              },
-                              child: Text(
-                                "Forgot password?",
-                                style: textTheme.labelLarge?.copyWith(
-                                  color: AppColors.gray.shade800,
-                                  fontWeight: FontWeight.w600,
+                          // Only show forgot password on web
+                          if (kIsWeb)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    Routes.forgotPassword,
+                                  );
+                                },
+                                child: Text(
+                                  "Forgot password?",
+                                  style: textTheme.labelLarge?.copyWith(
+                                    color: AppColors.gray.shade800,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                           const SizedBox(height: AppSpacing.sm),
                           if (_errorMessage != null) ...[
                             Text(
@@ -352,23 +354,25 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          SizedBox(
-                            height: 52,
-                            child: OutlinedButton.icon(
-                              onPressed: _isLoading ? null : _signInWithGoogle,
-                              icon: _googleMark(),
-                              label: const Text("Continue with Google"),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.gray.shade900,
-                                side: BorderSide(
-                                  color: AppColors.gray.shade300,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                          // Google signin only available on web
+                          if (kIsWeb)
+                            SizedBox(
+                              height: 52,
+                              child: OutlinedButton.icon(
+                                onPressed: _isLoading ? null : _signInWithGoogle,
+                                icon: _googleMark(),
+                                label: const Text("Continue with Google"),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.gray.shade900,
+                                  side: BorderSide(
+                                    color: AppColors.gray.shade300,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                           const SizedBox(height: AppSpacing.md),
                           // Web: Show the clickable Sign Up button
                           if (kIsWeb)
@@ -395,29 +399,6 @@ class _LoginPageState extends State<LoginPage> {
                                   textAlign: TextAlign.center,
                                   style: textTheme.bodyMedium?.copyWith(
                                     color: AppColors.gray.shade800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          // 🛠️ DEV BYPASS BUTTON (Only visible in debug mode on mobile devices)
-                          if (kDebugMode && !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS))
-                            Padding(
-                              padding: const EdgeInsets.only(top: AppSpacing.lg),
-                              child: TextButton(
-                                onPressed: () {
-                                  // Navigates straight to the mobile dashboard, bypassing auth
-                                  Navigator.pushNamedAndRemoveUntil(
-                                      context, 
-                                      '/mobile_dashboard', 
-                                      (Route<dynamic> route) => false,
-                                    );
-                                },
-                                child: const Text(
-                                  "🛠️ DEV BYPASS: Skip Login",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
                                   ),
                                 ),
                               ),

@@ -1,6 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import 'package:gaia/services/api_service.dart';
+import 'package:gaia/services/auth_session.dart';
 
 import 'history_screen.dart';
 class MobileDashboard extends StatefulWidget {
@@ -13,9 +20,15 @@ class MobileDashboard extends StatefulWidget {
 class _MobileDashboardState extends State<MobileDashboard> {
   late Stream<StepCount> _stepCountStream;
   String _steps = '?';
+  int _currentSteps = 0;
   
   // Variable to hold the giant initial hardware number
-  int _startingLineSteps = 0; 
+  int _startingLineSteps = 0;
+  
+  // For syncing steps every 100 steps
+  int _lastSyncedSteps = 0;
+  bool _isSyncing = false;
+  String? _syncError;
 
   @override
   void initState() {
@@ -44,14 +57,21 @@ class _MobileDashboardState extends State<MobileDashboard> {
           // If this is the very first reading, set the starting line
           if (_startingLineSteps == 0) {
             _startingLineSteps = event.steps;
+            _lastSyncedSteps = 0;
           }
 
           // Subtract the starting line from the hardware total
           int actualStepsTakenToday = event.steps - _startingLineSteps;
+          _currentSteps = actualStepsTakenToday;
           
           // Update the UI with the clean number
           _steps = actualStepsTakenToday.toString();
         });
+        
+        // Auto-sync every 100 steps
+        if ((_currentSteps - _lastSyncedSteps) >= 100) {
+          _syncStepsToBackend();
+        }
       },
     ).onError(
       (error) {
@@ -61,6 +81,83 @@ class _MobileDashboardState extends State<MobileDashboard> {
         print("Pedometer Error: $error");
       },
     );
+  }
+
+  Future<void> _syncStepsToBackend() async {
+    // Only sync if we have an auth token
+    if (AuthSession.token == null || AuthSession.token!.isEmpty) {
+      print('❌ Sync failed: No auth token available');
+      return;
+    }
+
+    // Don't sync if no new steps since last sync
+    if (_currentSteps <= _lastSyncedSteps) {
+      print('⏭️  Skipping sync: Not 100+ steps yet ($_currentSteps - $_lastSyncedSteps < 100)');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+
+    print('🔄 Syncing steps to backend...');
+    print('  📍 URL: ${ApiService.baseUrl}/steps/sync');
+    print('  👟 Steps: $_currentSteps');
+    print('  🔐 Token: ${AuthSession.token?.substring(0, 20)}...');
+
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/steps/sync');
+      final body = jsonEncode({'steps': _currentSteps});
+      
+      print('  📤 Sending POST request...');
+      
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AuthSession.token}',
+        },
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      print('  📥 Response status: ${response.statusCode}');
+      print('  📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _lastSyncedSteps = _currentSteps;
+          _syncError = null;
+          _isSyncing = false;
+        });
+        print('✅ Steps synced successfully: $_currentSteps');
+      } else {
+        final error = jsonDecode(response.body)['detail'] ?? 'Unknown error';
+        print('❌ Failed to sync steps: $error');
+        setState(() {
+          _syncError = 'Sync failed: $error';
+          _isSyncing = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Network error syncing steps: $e');
+      setState(() {
+        _syncError = 'Network error: $e';
+        _isSyncing = false;
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    // Clear auth session
+    AuthSession.token = null;
+    AuthSession.user = null;
+    
+    // Navigate back to login
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   @override
@@ -114,17 +211,92 @@ class _MobileDashboardState extends State<MobileDashboard> {
                         "Steps Taken", 
                         style: TextStyle(color: Colors.grey)
                       ),
+                      const SizedBox(height: 15),
+                      // Sync status indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_isSyncing)
+                            const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9147ff)),
+                              ),
+                            )
+                          else if (_syncError != null)
+                            const Icon(Icons.error_outline, color: Colors.red, size: 16)
+                          else
+                            const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isSyncing 
+                              ? 'Syncing...' 
+                              : (_syncError != null ? 'Sync failed' : 'In sync'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _syncError != null ? Colors.red : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Show error message if present
+                      if (_syncError != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _syncError!,
+                          style: const TextStyle(color: Colors.red, fontSize: 11),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 50),
-                // Action Button
+                const SizedBox(height: 30),
+                // Manual Sync Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9147ff), // GAIA Purple
+                      backgroundColor: const Color(0xFF9147ff),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isSyncing ? null : _syncStepsToBackend,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isSyncing)
+                          const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        else
+                          const Icon(Icons.cloud_upload, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isSyncing ? 'Syncing...' : 'Sync Steps Now',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+                // View History Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9147ff),
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
@@ -137,6 +309,32 @@ class _MobileDashboardState extends State<MobileDashboard> {
                     child: const Text(
                       "View History", 
                       style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                // Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _logout,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          "Logout",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
                 ),
