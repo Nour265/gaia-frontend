@@ -462,4 +462,27 @@ class ApiService {
         )
         .timeout(_requestTimeout);
   }
+  
+  static Future<int> fetchTodaysWater(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/water/today'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['intake_ml'] ?? 0;
+    }
+    return 0;
+  }
+
+  static Future<void> syncWater(String token, int intakeMl) async {
+    await http.post(
+      Uri.parse('$baseUrl/water/sync'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'intake_ml': intakeMl}),
+    );
+  }
 }
