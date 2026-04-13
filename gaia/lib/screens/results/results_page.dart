@@ -38,7 +38,7 @@ class ResultsPage extends StatefulWidget {
 class _ResultsPageState extends State<ResultsPage>
     with TickerProviderStateMixin {
   static const LatLng _fallbackLocation = LatLng(37.7749, -122.4194);
-  static const double _maxPreciseAccuracyMeters = 1500;
+  static const double _maxPreciseAccuracyMeters = 50000;
   static const List<_DoctorTemplate> _doctorTemplates = [
     _DoctorTemplate(
       name: 'Dr. Aisha Bello',
@@ -88,9 +88,11 @@ class _ResultsPageState extends State<ResultsPage>
   bool _isLocatingUser = false;
   bool _hasMapAccess = false;
   int _selectedDoctorIndex = 0;
-  double _maxDistanceKm = 6;
+  double _maxDistanceKm = 30;
   bool _mapReady = false;
   AnimationController? _mapAnimationController;
+  String? _predictedCondition;
+  bool _isBooking = false;
 
   bool get _supportsGeolocator {
     if (kIsWeb) return true;
@@ -161,6 +163,7 @@ class _ResultsPageState extends State<ResultsPage>
     if (_mapReady) {
       _animateTo(resolved, 12.5);
     }
+    _fetchRealDoctors(resolved);
   }
 
   Future<void> _usePreciseDeviceLocation() async {
@@ -246,8 +249,9 @@ class _ResultsPageState extends State<ResultsPage>
         }
       });
 
-      if (mapAccessGranted && precise != null && _mapReady) {
-        _animateTo(precise!, 13.2);
+      if (mapAccessGranted && precise != null) {
+        if (_mapReady) _animateTo(precise, 13.2);
+        _fetchRealDoctors(precise);
       }
     }
   }
@@ -402,6 +406,7 @@ class _ResultsPageState extends State<ResultsPage>
       final lng = center.longitude + (template.eastKm / (111.0 * lngScale));
 
       return _Doctor(
+        id: 0,
         name: template.name,
         specialty: template.specialty,
         rating: template.rating,
@@ -411,6 +416,75 @@ class _ResultsPageState extends State<ResultsPage>
       );
     }).toList();
   }
+  Future<void> _fetchRealDoctors(LatLng center) async {
+    try {
+      final raw = await ApiService.getNearbyDoctors(
+        lat: center.latitude,
+        lng: center.longitude,
+        condition: _predictedCondition,
+        radiusKm: 100,
+      );
+      if (!mounted) return;
+      final fetched = raw.map<_Doctor>((d) {
+        return _Doctor(
+          id: (d['id'] as int?) ?? 0,
+          name: d['name'] as String? ?? 'Dr. Unknown',
+          specialty: d['specialty'] as String? ?? 'General Practice',
+          rating: ((d['rating'] as num?) ?? 4.5).toDouble(),
+          availability: 'Contact to schedule',
+          phone: d['phone'] as String? ?? '',
+          location: LatLng(
+            (d['latitude'] as num).toDouble(),
+            (d['longitude'] as num).toDouble(),
+          ),
+        );
+      }).toList();
+
+      if (fetched.isNotEmpty && mounted) {
+        setState(() {
+          _doctors = fetched;
+          _selectedDoctorIndex = 0;
+        });
+        if (_mapReady) _animateTo(center, 12.5);
+      }
+    } catch (_) {
+      // Fall back silently to the template-based list already shown
+    }
+  }
+
+  Future<void> _bookAppointment(_Doctor doctor, String condition) async {
+    if (doctor.id == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This is a demo doctor — add real doctors via the admin panel.')),
+      );
+      return;
+    }
+    setState(() => _isBooking = true);
+    try {
+      await ApiService.bookAppointment(doctorId: doctor.id, condition: condition);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Appointment booked with ${doctor.name}!'),
+          backgroundColor: Colors.green.shade700,
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () => Navigator.pushNamed(context, '/my-appointments'),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
+      );
+    } finally {
+      if (mounted) setState(() => _isBooking = false);
+    }
+  }
+
   Future<void> _generateAndShareReport(Map<String, dynamic> data) async {
     final pdf = pw.Document();
     
@@ -591,6 +665,15 @@ class _ResultsPageState extends State<ResultsPage>
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else {
                   final data = snapshot.data!;
+                  // Capture the top predicted condition once the future resolves
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final preds = data['top_3_predictions'] as List?;
+                    if (preds != null && preds.isNotEmpty && _predictedCondition == null) {
+                      setState(() {
+                        _predictedCondition = (preds.first as Map)['disease'] as String?;
+                      });
+                    }
+                  });
                   final filteredDoctors = _doctors.where((doctor) {
                     final km = _distance.as(
                       LengthUnit.Kilometer,
@@ -672,12 +755,9 @@ class _ResultsPageState extends State<ResultsPage>
                                       );
                                       return;
                                     }
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Demo: booking flow would start here.',
-                                        ),
-                                      ),
+                                    _bookAppointment(
+                                      activeDoctor,
+                                      _predictedCondition ?? '',
                                     );
                                   },
                                 );
@@ -989,8 +1069,8 @@ class _ResultsPageState extends State<ResultsPage>
                               Slider(
                                 value: _maxDistanceKm,
                                 min: 1,
-                                max: 12,
-                                divisions: 11,
+                                max: 100,
+                                divisions: 99,
                                 label:
                                     '${_maxDistanceKm.toStringAsFixed(0)} km',
                                 onChanged: (value) {
@@ -1164,6 +1244,46 @@ class _ResultsPageState extends State<ResultsPage>
                                 controls,
                                 const SizedBox(height: 16),
                                 detailsWidget,
+                                if (filteredDoctors.length > 1) ...[
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'All Matching Doctors (${filteredDoctors.length})',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.purple,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  for (var i = 0; i < filteredDoctors.length; i++)
+                                    _DoctorListTile(
+                                      doctor: filteredDoctors[i],
+                                      isSelected: filteredDoctors[i] == activeDoctor,
+                                      distanceKm: _distance.as(
+                                        LengthUnit.Kilometer,
+                                        _userLocation,
+                                        filteredDoctors[i].location,
+                                      ),
+                                      etaMinutes: _etaMinutes(_distance.as(
+                                        LengthUnit.Kilometer,
+                                        _userLocation,
+                                        filteredDoctors[i].location,
+                                      )),
+                                      matchScore: _matchScore(filteredDoctors[i], data['risk_level']),
+                                      badges: _matchBadges(filteredDoctors[i], data['risk_level']),
+                                      onTap: () {
+                                        final orig = _doctors.indexOf(filteredDoctors[i]);
+                                        if (orig >= 0) {
+                                          setState(() => _selectedDoctorIndex = orig);
+                                          _animateTo(filteredDoctors[i].location, 14.2);
+                                        }
+                                      },
+                                      onFocus: () => _animateTo(filteredDoctors[i].location, 14.2),
+                                      onBook: () => _bookAppointment(
+                                        filteredDoctors[i],
+                                        _predictedCondition ?? '',
+                                      ),
+                                    ),
+                                ],
                               ],
                             ],
                           );
@@ -1308,6 +1428,7 @@ class _ResultsPageState extends State<ResultsPage>
 
 class _Doctor {
   const _Doctor({
+    required this.id,
     required this.name,
     required this.specialty,
     required this.rating,
@@ -1316,6 +1437,7 @@ class _Doctor {
     required this.location,
   });
 
+  final int id;
   final String name;
   final String specialty;
   final double rating;
@@ -1342,6 +1464,141 @@ class _DoctorTemplate {
   final String phone;
   final double northKm;
   final double eastKm;
+}
+
+// ── Compact doctor list tile (expandable) ────────────────────────────────────
+
+class _DoctorListTile extends StatefulWidget {
+  const _DoctorListTile({
+    required this.doctor,
+    required this.isSelected,
+    required this.distanceKm,
+    required this.etaMinutes,
+    required this.matchScore,
+    required this.badges,
+    required this.onTap,
+    required this.onFocus,
+    required this.onBook,
+  });
+
+  final _Doctor doctor;
+  final bool isSelected;
+  final double distanceKm;
+  final int etaMinutes;
+  final double? matchScore;
+  final List<String> badges;
+  final VoidCallback onTap;
+  final VoidCallback onFocus;
+  final VoidCallback onBook;
+
+  @override
+  State<_DoctorListTile> createState() => _DoctorListTileState();
+}
+
+class _DoctorListTileState extends State<_DoctorListTile> {
+  bool _expanded = false;
+
+  @override
+  void didUpdateWidget(covariant _DoctorListTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Auto-collapse when another doctor is selected
+    if (!widget.isSelected && oldWidget.isSelected) {
+      setState(() => _expanded = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: widget.isSelected ? AppColors.purple : Colors.grey.shade200,
+          width: widget.isSelected ? 2 : 1,
+        ),
+      ),
+      color: widget.isSelected ? AppColors.purple.withValues(alpha: 0.04) : null,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              widget.onTap();
+              setState(() => _expanded = !_expanded);
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: widget.isSelected
+                        ? AppColors.purple.withValues(alpha: 0.15)
+                        : Colors.grey.shade100,
+                    child: Icon(
+                      Icons.local_hospital_outlined,
+                      size: 20,
+                      color: widget.isSelected ? AppColors.purple : Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.doctor.name,
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: widget.isSelected ? AppColors.purple : null,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.doctor.specialty,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${widget.distanceKm.toStringAsFixed(1)} km away',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.grey.shade500,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: _DoctorDetailsCard(
+                doctor: widget.doctor,
+                distanceKm: widget.distanceKm,
+                etaMinutes: widget.etaMinutes,
+                matchScore: widget.matchScore,
+                badges: widget.badges,
+                onFocus: widget.onFocus,
+                onBook: widget.onBook,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _DoctorMap extends StatelessWidget {
@@ -1375,13 +1632,14 @@ class _DoctorMap extends StatelessWidget {
       for (var i = 0; i < doctors.length; i++)
         Marker(
           point: doctors[i].location,
-          width: 60,
-          height: 60,
+          width: 80,
+          height: 80,
           child: GestureDetector(
             onTap: () => onSelect(i),
+            behavior: HitTestBehavior.opaque,
             child: _DoctorPin(
               selected: activeDoctor == doctors[i],
-              label: doctors[i].name.split(' ').first,
+              label: doctors[i].name.split(' ').last,
             ),
           ),
         ),
@@ -1665,8 +1923,8 @@ class _PulsingPinState extends State<_PulsingPin>
     }
 
     return SizedBox(
-      width: 90,
-      height: 90,
+      width: 80,
+      height: 80,
       child: Stack(
         alignment: Alignment.center,
         children: [

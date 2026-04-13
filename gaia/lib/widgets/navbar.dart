@@ -72,15 +72,15 @@ class NavBar extends StatelessWidget {
 
   Row _buildItems(BuildContext context, TextTheme textTheme) {
     final itemStyle = textTheme.bodyMedium;
+    final user = AuthSession.user;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         NavItem(
           label: 'About',
           style: itemStyle,
-          onTap: () {
-            Navigator.pushNamed(context, Routes.about);
-          },
+          onTap: () => Navigator.pushNamed(context, Routes.about),
         ),
         const SizedBox(width: 24.0),
         NavItem(label: 'Contact', style: itemStyle, onTap: () {}),
@@ -88,26 +88,36 @@ class NavBar extends StatelessWidget {
         NavItem(
           label: 'Blog',
           style: itemStyle,
-          onTap: () {
-            Navigator.pushNamed(context, Routes.blog);
-          },
+          onTap: () => Navigator.pushNamed(context, Routes.blog),
         ),
         const SizedBox(width: 24.0),
         NavItem(
           label: 'Symptoms',
           style: itemStyle,
-          onTap: () {
-            Navigator.pushNamed(context, Routes.symptoms);
-          },
+          onTap: () => Navigator.pushNamed(context, Routes.symptoms),
         ),
         const SizedBox(width: 24.0),
         NavItem(
           label: 'Health Tracking',
           style: itemStyle,
-          onTap: () {
-            Navigator.pushNamed(context, Routes.healthTracking);
-          },
+          onTap: () => Navigator.pushNamed(context, Routes.healthTracking),
         ),
+        // Show role-specific dashboard link when logged in
+        if (user != null && user.isDoctor) ...[
+          const SizedBox(width: 24.0),
+          NavItem(
+            label: 'My Dashboard',
+            style: itemStyle?.copyWith(color: AppColors.purple, fontWeight: FontWeight.w600),
+            onTap: () => Navigator.pushNamed(context, Routes.doctorDashboard),
+          ),
+        ] else if (user != null) ...[
+          const SizedBox(width: 24.0),
+          NavItem(
+            label: 'My Appointments',
+            style: itemStyle?.copyWith(color: AppColors.turquoise, fontWeight: FontWeight.w600),
+            onTap: () => Navigator.pushNamed(context, Routes.myAppointments),
+          ),
+        ],
       ],
     );
   }

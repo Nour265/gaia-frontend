@@ -170,6 +170,8 @@ class ApiService {
     String? gender,
     String? phone,
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     final response = await _put(
       Uri.parse("$baseUrl/auth/me"),
@@ -181,6 +183,8 @@ class ApiService {
         if (gender != null) "gender": gender,
         if (phone != null) "phone": phone,
         if (location != null) "location": location,
+        if (latitude != null) "latitude": latitude,
+        if (longitude != null) "longitude": longitude,
       }),
     );
 
@@ -315,6 +319,8 @@ class ApiService {
     String? specialty,
     String? phone,
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     final response = await _post(
       Uri.parse("$baseUrl/admin/users"),
@@ -326,6 +332,8 @@ class ApiService {
         if (specialty != null && specialty.isNotEmpty) "specialty": specialty,
         if (phone != null && phone.isNotEmpty) "phone": phone,
         if (location != null && location.isNotEmpty) "location": location,
+        if (latitude != null) "latitude": latitude,
+        if (longitude != null) "longitude": longitude,
       }),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -369,6 +377,106 @@ class ApiService {
     final response = await _delete(Uri.parse("$baseUrl/admin/users/$userId"));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _buildApiException("Admin", response);
+    }
+  }
+
+  // ── Nearby doctors ──────────────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getNearbyDoctors({
+    required double lat,
+    required double lng,
+    String? condition,
+    double radiusKm = 50.0,
+  }) async {
+    final uri = Uri.parse("$baseUrl/doctors/nearby").replace(queryParameters: {
+      "lat": lat.toString(),
+      "lng": lng.toString(),
+      if (condition != null && condition.isNotEmpty) "condition": condition,
+      "radius_km": radiusKm.toString(),
+    });
+    final response = await _get(uri);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Doctors", response);
+    }
+  }
+
+  // ── Appointments ────────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> bookAppointment({
+    required int doctorId,
+    String? condition,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/appointments"),
+      body: jsonEncode({
+        "doctor_id": doctorId,
+        if (condition != null && condition.isNotEmpty) "condition": condition,
+      }),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Appointment", response);
+    }
+  }
+
+  static Future<List<dynamic>> getMyAppointments() async {
+    final response = await _get(Uri.parse("$baseUrl/appointments/my"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Appointments", response);
+    }
+  }
+
+  static Future<List<dynamic>> getDoctorAppointments() async {
+    final response = await _get(Uri.parse("$baseUrl/doctor/appointments"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Appointments", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateAppointmentStatus({
+    required int appointmentId,
+    required String status,
+  }) async {
+    final uri = Uri.parse("$baseUrl/appointments/$appointmentId/status")
+        .replace(queryParameters: {"status": status});
+    final response = await _patch(uri);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Appointment", response);
+    }
+  }
+
+  // ── Messages ────────────────────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getMessages({required int appointmentId}) async {
+    final response = await _get(Uri.parse("$baseUrl/appointments/$appointmentId/messages"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Messages", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> sendMessage({
+    required int appointmentId,
+    required String content,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/appointments/$appointmentId/messages"),
+      body: jsonEncode({"content": content}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Messages", response);
     }
   }
 

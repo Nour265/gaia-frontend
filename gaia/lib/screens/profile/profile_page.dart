@@ -4,6 +4,7 @@ import 'package:gaia/services/api_service.dart';
 import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
 import 'package:gaia/widgets/navbar.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -25,8 +26,10 @@ class _ProfilePageState extends State<ProfilePage> {
   final _createdAtController = TextEditingController();
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isLocating = false;
   String? _errorMessage;
   String? _successMessage;
+  String? _locationDisplay;
   String _initialName = "";
   String _initialEmail = "";
   int? _initialAge;
@@ -88,6 +91,77 @@ class _ProfilePageState extends State<ProfilePage> {
     _locationController.text = user.location ?? "";
     _idController.text = user.id.toString();
     _createdAtController.text = user.createdAt ?? "-";
+    _locationDisplay = _formatLocation(user);
+  }
+
+  String? _formatLocation(AuthUser user) {
+    if (user.latitude != null && user.longitude != null) {
+      return '${user.latitude!.toStringAsFixed(6)}, ${user.longitude!.toStringAsFixed(6)}';
+    }
+    if (user.location != null && user.location!.isNotEmpty) {
+      return user.location;
+    }
+    return null;
+  }
+
+  Future<void> _updateLocation() async {
+    if (_isLocating) return;
+
+    setState(() {
+      _isLocating = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception("Location services are disabled on your device.");
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied) {
+        throw Exception("Location permission was denied.");
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(
+          "Location permission is permanently denied. Enable it in your device settings.",
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(const Duration(seconds: 15));
+
+      final locationString =
+          '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+
+      final user = await ApiService.updateProfile(
+        location: locationString,
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+
+      if (!mounted) return;
+      _setFormValues(user);
+      setState(() {
+        _successMessage = "Location updated.";
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -324,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.location_on_outlined,
@@ -337,7 +411,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Location (device permission)",
+                                          "Location",
                                           style: textTheme.bodySmall?.copyWith(
                                             color: AppColors.gray.shade800,
                                             fontWeight: FontWeight.w600,
@@ -345,16 +419,33 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                         const SizedBox(height: AppSpacing.xs),
                                         Text(
-                                          _locationController.text.isEmpty
-                                              ? "No location saved"
-                                              : _locationController.text,
+                                          _locationDisplay ?? "No location saved",
                                           style: textTheme.bodyMedium?.copyWith(
-                                            color: AppColors.gray.shade900,
+                                            color: _locationDisplay != null
+                                                ? AppColors.gray.shade900
+                                                : AppColors.gray.shade600,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  _isLocating
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : TextButton.icon(
+                                          onPressed: _updateLocation,
+                                          icon: const Icon(Icons.gps_fixed, size: 16),
+                                          label: const Text("Update"),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: AppColors.turquoise,
+                                          ),
+                                        ),
                                 ],
                               ),
                             ),

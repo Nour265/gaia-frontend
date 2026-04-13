@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gaia/constants/specialties.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
 
@@ -16,6 +17,9 @@ class _CreateDoctorDialogState extends State<CreateDoctorDialog> {
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
+  final _latController = TextEditingController();
+  final _lngController = TextEditingController();
+  String? _selectedSpecialty;
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
@@ -27,6 +31,8 @@ class _CreateDoctorDialogState extends State<CreateDoctorDialog> {
     _passwordController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
+    _latController.dispose();
+    _lngController.dispose();
     super.dispose();
   }
 
@@ -46,8 +52,11 @@ class _CreateDoctorDialogState extends State<CreateDoctorDialog> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         role: 'doctor',
+        specialty: _selectedSpecialty,
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
+        latitude: double.tryParse(_latController.text.trim()),
+        longitude: double.tryParse(_lngController.text.trim()),
       );
 
       if (!mounted) return;
@@ -228,8 +237,77 @@ class _CreateDoctorDialogState extends State<CreateDoctorDialog> {
                 const SizedBox(height: 16),
                 _buildTextField(
                   controller: _locationController,
-                  label: 'Location (Optional)',
+                  label: 'Location / City (Optional)',
                   icon: Icons.location_on_outlined,
+                ),
+                const SizedBox(height: 16),
+                // Specialty dropdown
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedSpecialty,
+                  decoration: InputDecoration(
+                    labelText: 'Specialty (Optional)',
+                    prefixIcon: Icon(Icons.medical_services_outlined,
+                        color: AppColors.gray.shade700),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: BorderSide(color: AppColors.gray.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: BorderSide(color: AppColors.gray.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: BorderSide(color: AppColors.purple, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.white,
+                  ),
+                  items: kDoctorSpecialties
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedSpecialty = v),
+                ),
+                const SizedBox(height: 16),
+                // Coordinates row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _latController,
+                        label: 'Latitude (Optional)',
+                        icon: Icons.explore_outlined,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true, signed: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return null;
+                          final n = double.tryParse(v.trim());
+                          if (n == null || n < -90 || n > 90) {
+                            return 'Must be -90 to 90';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _lngController,
+                        label: 'Longitude (Optional)',
+                        icon: Icons.explore_outlined,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true, signed: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return null;
+                          final n = double.tryParse(v.trim());
+                          if (n == null || n < -180 || n > 180) {
+                            return 'Must be -180 to 180';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
                 Row(

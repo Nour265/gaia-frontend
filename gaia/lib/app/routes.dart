@@ -18,6 +18,8 @@ import '../screens/admin/admin_users_page.dart';
 import '../screens/admin/admin_admins_page.dart';
 import '../screens/Information/info.dart';
 import '../screens/step_tracking/step_tracker.dart';
+import '../screens/doctor/doctor_dashboard_page.dart';
+import '../screens/user/my_appointments_page.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
@@ -50,6 +52,10 @@ class Routes {
   static const String adminDoctors = '/admin/doctors';
   static const String adminUsers = '/admin/users';
   static const String adminAdmins = '/admin/admins';
+
+  // Doctor & user appointment routes
+  static const String doctorDashboard  = '/doctor/dashboard';
+  static const String myAppointments   = '/my-appointments';
 
   // This map connects route names (strings) to the Widgets (screens) they open.
   // Flutter uses this map to know which screen to build when a route is requested.
@@ -89,8 +95,12 @@ class Routes {
 
     // Admin routes
     adminDashboard: (_) => const AdminDashboardPage(),
-    adminDoctors: (_) => const AdminDoctorsPage(),
-    adminUsers: (_) => const AdminUsersPage(),
-    adminAdmins: (_) => const AdminAdminsPage(),
+    adminDoctors:   (_) => const AdminDoctorsPage(),
+    adminUsers:     (_) => const AdminUsersPage(),
+    adminAdmins:    (_) => const AdminAdminsPage(),
+
+    // Doctor & user appointment routes
+    doctorDashboard: (_) => const DoctorDashboardPage(),
+    myAppointments:  (_) => const MyAppointmentsPage(),
   };
 }
