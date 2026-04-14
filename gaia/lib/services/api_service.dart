@@ -480,6 +480,34 @@ class ApiService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> fetchStepsHistory() async {
+    final response = await _get(Uri.parse("$baseUrl/steps/history"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final records = data["records"] as List<dynamic>? ?? <dynamic>[];
+      return records
+          .whereType<Map<String, dynamic>>()
+          .map(Map<String, dynamic>.from)
+          .toList();
+    } else {
+      throw _buildApiException("Steps", response);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchWaterHistory() async {
+    final response = await _get(Uri.parse("$baseUrl/water/history"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final records = data["records"] as List<dynamic>? ?? <dynamic>[];
+      return records
+          .whereType<Map<String, dynamic>>()
+          .map(Map<String, dynamic>.from)
+          .toList();
+    } else {
+      throw _buildApiException("Water", response);
+    }
+  }
+
   static Exception _buildApiException(String prefix, http.Response response) {
     final status = response.statusCode;
     final body = response.body.trim();

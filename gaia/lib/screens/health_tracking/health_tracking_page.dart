@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:gaia/models/health_metric.dart';
+import 'package:gaia/services/api_service.dart';
+import 'package:gaia/services/auth_session.dart';
 import 'package:gaia/values/values.dart';
 import 'package:gaia/widgets/navbar.dart';
 
@@ -147,12 +149,20 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   String? _errorMessage;
   String _selectedPeriod = '30d';
   String _selectedTypeFilter = 'all';
+  final ValueNotifier<bool> _showAdvancedSections = ValueNotifier<bool>(false);
   List<HealthMetric> _metrics = [];
+  static const int _logPreviewCount = 8;
 
   @override
   void initState() {
     super.initState();
     _loadHealthMetrics();
+  }
+
+  @override
+  void dispose() {
+    _showAdvancedSections.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHealthMetrics() async {
@@ -162,22 +172,61 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     });
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      final generated = _generateMockData()
-        ..sort((a, b) => b.date.compareTo(a.date));
+      final generated = await _fetchPersistedTrackerMetrics();
       setState(() {
         _metrics = generated;
         _isLoading = false;
       });
     } catch (e) {
+      final message = e.toString();
+      final isAuthIssue = message.contains('401') ||
+          message.toLowerCase().contains('auth') ||
+          message.toLowerCase().contains('token');
+      if (isAuthIssue) {
+        AuthSession.clear();
+      }
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Failed to load health metrics: $e';
+        _errorMessage = isAuthIssue
+            ? 'Please log in to load synced step and water records.'
+            : 'Failed to load health metrics: $e';
       });
     }
   }
 
-  List<HealthMetric> _generateMockData() {
+  Future<List<HealthMetric>> _fetchPersistedTrackerMetrics() async {
+    final metrics = _generateDummyNonSyncedMetrics();
+    final token = AuthSession.token;
+    if (token == null || token.isEmpty) {
+      metrics.sort((a, b) => b.date.compareTo(a.date));
+      return metrics;
+    }
+
+    try {
+      final responses = await Future.wait<List<Map<String, dynamic>>>([
+        ApiService.fetchStepsHistory(),
+        ApiService.fetchWaterHistory(),
+      ]);
+
+      metrics.addAll(_mapStepRecordsToMetrics(responses[0]));
+      metrics.addAll(_mapWaterRecordsToMetrics(responses[1]));
+    } catch (_) {
+      // Keep showing dummy non-synced metrics even if synced endpoints fail.
+    }
+
+    metrics.sort((a, b) => b.date.compareTo(a.date));
+    return metrics;
+  }
+
+  List<HealthMetric> _generateDummyNonSyncedMetrics() {
+    const dummyChances = <String, double>{
+      'sleep': 0.92,
+      'mood': 0.85,
+      'exercise': 0.66,
+      'heart_rate': 0.58,
+      'weight': 0.25,
+      'blood_pressure': 0.20,
+    };
     final random = Random(97);
     final now = DateUtils.dateOnly(DateTime.now());
     final metrics = <HealthMetric>[];
@@ -188,20 +237,21 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
         continue;
       }
 
-      _tryAddMetric(random, metrics, day, 'sleep', chance: 0.92);
-      _tryAddMetric(random, metrics, day, 'mood', chance: 0.85);
-      _tryAddMetric(random, metrics, day, 'steps', chance: 0.82);
-      _tryAddMetric(random, metrics, day, 'water', chance: 0.70);
-      _tryAddMetric(random, metrics, day, 'exercise', chance: 0.66);
-      _tryAddMetric(random, metrics, day, 'heart_rate', chance: 0.58);
-      _tryAddMetric(random, metrics, day, 'weight', chance: 0.25);
-      _tryAddMetric(random, metrics, day, 'blood_pressure', chance: 0.20);
+      for (final entry in dummyChances.entries) {
+        _tryAddDummyMetric(
+          random,
+          metrics,
+          day,
+          entry.key,
+          chance: entry.value,
+        );
+      }
     }
 
     return metrics;
   }
 
-  void _tryAddMetric(
+  void _tryAddDummyMetric(
     Random random,
     List<HealthMetric> metrics,
     DateTime day,
@@ -213,8 +263,8 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     }
 
     final config = _metricConfigs[type]!;
-    final value = _mockValue(type, random);
-    final note = _mockNote(type, random, value);
+    final value = _dummyValue(type, random);
+    final note = _dummyNote(type, random, value);
 
     metrics.add(
       HealthMetric(
@@ -231,7 +281,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     );
   }
 
-  double _mockValue(String type, Random random) {
+  double _dummyValue(String type, Random random) {
     switch (type) {
       case 'sleep':
         return _round(5.3 + random.nextDouble() * 4.2, 1);
@@ -243,10 +293,6 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
         return _round(101 + random.nextDouble() * 32, 0);
       case 'mood':
         return _round(4 + random.nextDouble() * 6, 1);
-      case 'water':
-        return _round(1 + random.nextDouble() * 2.8, 1);
-      case 'steps':
-        return _round(2600 + random.nextDouble() * 11000, 0);
       case 'heart_rate':
         return _round(56 + random.nextDouble() * 30, 0);
       default:
@@ -254,7 +300,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
     }
   }
 
-  String? _mockNote(String type, Random random, double value) {
+  String? _dummyNote(String type, Random random, double value) {
     if (random.nextDouble() < 0.65) {
       return null;
     }
@@ -270,10 +316,6 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             : 'Light movement day.';
       case 'mood':
         return value < 5.5 ? 'Stressful workday.' : 'Felt focused and calm.';
-      case 'water':
-        return value < 2
-            ? 'Need to hydrate earlier.'
-            : 'Hydration target almost done.';
       case 'heart_rate':
         return value > 82
             ? 'After a busy morning commute.'
@@ -281,6 +323,56 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
       default:
         return null;
     }
+  }
+
+  List<HealthMetric> _mapStepRecordsToMetrics(List<Map<String, dynamic>> records) {
+    final config = _metricConfigs['steps']!;
+    return records.map((record) {
+      final date = _parseRecordDate(record['record_date']);
+      final recordId = (record['id'] ?? date.microsecondsSinceEpoch).toString();
+      final steps = (record['steps'] as num?)?.toDouble() ?? 0;
+
+      return HealthMetric(
+        id: 'steps_$recordId',
+        name: config.label,
+        type: config.key,
+        value: steps,
+        unit: config.unit,
+        date: date,
+      );
+    }).toList();
+  }
+
+  List<HealthMetric> _mapWaterRecordsToMetrics(
+    List<Map<String, dynamic>> records,
+  ) {
+    final config = _metricConfigs['water']!;
+    return records.map((record) {
+      final date = _parseRecordDate(record['record_date']);
+      final recordId = (record['id'] ?? date.microsecondsSinceEpoch).toString();
+      final intakeMl = (record['intake_ml'] as num?)?.toDouble() ?? 0;
+
+      return HealthMetric(
+        id: 'water_$recordId',
+        name: config.label,
+        type: config.key,
+        value: intakeMl / 1000,
+        unit: config.unit,
+        date: date,
+      );
+    }).toList();
+  }
+
+  DateTime _parseRecordDate(dynamic value) {
+    if (value is String && value.isNotEmpty) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        // Fall through to today's date fallback.
+      }
+    }
+
+    return DateUtils.dateOnly(DateTime.now());
   }
 
   List<HealthMetric> _filteredMetrics() {
@@ -828,18 +920,88 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
               const SizedBox(height: AppSpacing.md),
               _buildQuickStats(filtered),
               const SizedBox(height: AppSpacing.md),
-              _buildAlertsSection(filtered),
-              const SizedBox(height: AppSpacing.md),
               _buildTrendsSection(filtered, constraints.maxWidth),
               const SizedBox(height: AppSpacing.md),
-              _buildGoalsSection(filtered),
-              const SizedBox(height: AppSpacing.md),
-              _buildQuickActions(),
+              _buildAdvancedSections(filtered),
               const SizedBox(height: AppSpacing.md),
               _buildLogsSection(filtered),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAdvancedSections(List<HealthMetric> filtered) {
+    final textTheme = Theme.of(context).textTheme;
+    final advancedContent = RepaintBoundary(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          _buildAlertsSection(filtered),
+          const SizedBox(height: AppSpacing.md),
+          _buildGoalsSection(filtered),
+          const SizedBox(height: AppSpacing.md),
+          _buildQuickActions(),
+        ],
+      ),
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: AppColors.white,
+        border: Border.all(color: AppColors.gray[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ValueListenableBuilder<bool>(
+            valueListenable: _showAdvancedSections,
+            child: advancedContent,
+            builder: (context, expanded, child) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'More Insights & Actions',
+                              style: textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'Open this only when you need deeper alerts, goals, and shortcuts.',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppColors.gray[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _showAdvancedSections.value = !expanded,
+                        icon: Icon(
+                          expanded
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                        ),
+                        label: Text(expanded ? 'Collapse' : 'Expand'),
+                      ),
+                    ],
+                  ),
+                  if (expanded) child!,
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -1745,6 +1907,7 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
   Widget _buildLogsSection(List<HealthMetric> filtered) {
     final textTheme = Theme.of(context).textTheme;
     final logs = filtered.take(40).toList();
+    final previewLogs = logs.take(_logPreviewCount).toList();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -1762,10 +1925,12 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Logbook Timeline', style: textTheme.titleMedium),
+                    Text('Recent Logbook', style: textTheme.titleMedium),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${logs.length} most recent entries shown',
+                      logs.isEmpty
+                          ? 'No entries match your current filter'
+                          : 'Showing ${previewLogs.length} of ${logs.length} entries',
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.gray[700],
                       ),
@@ -1789,144 +1954,172 @@ class _HealthTrackingPageState extends State<HealthTrackingPage> {
             _buildEmptyLogsState()
           else
             ListView.separated(
-              itemCount: logs.length,
+              itemCount: previewLogs.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final metric = logs[index];
-                final config = _metricConfigs[metric.type];
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.gray[200]!),
-                          color: AppColors.gray[100],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 92,
-                              decoration: BoxDecoration(
-                                color: config?.color ?? AppColors.gray[700]!,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(AppRadius.md),
-                                  bottomLeft: Radius.circular(AppRadius.md),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.sm),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 17,
-                                      backgroundColor:
-                                          (config?.color ?? AppColors.gray)
-                                              .withOpacity(0.18),
-                                      child: Icon(
-                                        config?.icon ??
-                                            Icons.health_and_safety_outlined,
-                                        color:
-                                            config?.color ??
-                                            AppColors.gray[800],
-                                        size: 18,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  metric.name,
-                                                  style: textTheme.bodyLarge
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                ),
-                                              ),
-                                              Text(
-                                                '${_formatValue(metric.value, config?.decimals ?? 1)} ${metric.unit}',
-                                                style: textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: AppSpacing.xs),
-                                          Text(
-                                            _formatEntryDate(metric.date),
-                                            style: textTheme.bodyMedium
-                                                ?.copyWith(
-                                                  color: AppColors.gray[700],
-                                                ),
-                                          ),
-                                          if (metric.note != null &&
-                                              metric.note!
-                                                  .trim()
-                                                  .isNotEmpty) ...[
-                                            const SizedBox(
-                                              height: AppSpacing.xs,
-                                            ),
-                                            Text(
-                                              metric.note!,
-                                              style: textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    color: AppColors.gray[800],
-                                                    fontStyle: FontStyle.italic,
-                                                  ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        if (value == 'edit') {
-                                          _openMetricDialog(editing: metric);
-                                        } else if (value == 'delete') {
-                                          _deleteMetric(metric);
-                                        }
-                                      },
-                                      itemBuilder: (_) => const [
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Text('Edit'),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'delete',
-                                          child: Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) =>
+                  _buildLogRow(previewLogs[index], textTheme),
             ),
+          if (logs.length > _logPreviewCount) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _openFullLogbook(logs),
+                icon: const Icon(Icons.open_in_new_rounded),
+                label: const Text('View full logbook'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFullLogbook(List<HealthMetric> logs) async {
+    final textTheme = Theme.of(context).textTheme;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          minChildSize: 0.55,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.xl),
+                ),
+                border: Border.all(color: AppColors.gray[200]!),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.gray[300],
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Full Logbook (${logs.length})',
+                            style: textTheme.titleMedium,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      itemCount: logs.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) =>
+                          _buildLogRow(logs[index], textTheme),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLogRow(HealthMetric metric, TextTheme textTheme) {
+    final config = _metricConfigs[metric.type];
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.gray[200]!),
+        color: AppColors.gray[100],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 15,
+            backgroundColor:
+                (config?.color ?? AppColors.gray).withOpacity(0.18),
+            child: Icon(
+              config?.icon ?? Icons.health_and_safety_outlined,
+              color: config?.color ?? AppColors.gray[800],
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  metric.name,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatEntryDate(metric.date),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.gray[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            '${_formatValue(metric.value, config?.decimals ?? 1)} ${metric.unit}',
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') {
+                _openMetricDialog(editing: metric);
+              } else if (value == 'delete') {
+                _deleteMetric(metric);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Edit'),
+              ),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
+            ],
+          ),
         ],
       ),
     );

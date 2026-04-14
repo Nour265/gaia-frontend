@@ -20,6 +20,7 @@ import '../screens/Information/info.dart';
 import '../screens/step_tracking/step_tracker.dart';
 import '../screens/doctor/doctor_dashboard_page.dart';
 import '../screens/user/my_appointments_page.dart';
+import '../services/auth_session.dart';
 
 // This class centralizes all route names and their corresponding screens.
 // It prevents having hard-coded strings spread everywhere in the app.
@@ -78,8 +79,9 @@ class Routes {
     // When Flutter navigates to '/blog/article', it builds the BlogArticlePage widget.
     blogArticle: (_) => const BlogArticlePage(),
 
-    // When Flutter navigates to '/health-tracking', it builds the HealthTrackingPage widget.
-    healthTracking: (_) => const HealthTrackingPage(),
+    // Health tracker is protected: users must be logged in.
+    healthTracking: (_) =>
+        AuthSession.isLoggedIn ? const HealthTrackingPage() : const LoginPage(),
 
     // When Flutter navigates to '/login', it builds the LoginPage widget.
     login: (_) => const LoginPage(),
