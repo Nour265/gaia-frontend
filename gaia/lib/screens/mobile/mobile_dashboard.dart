@@ -34,7 +34,7 @@ class _MobileDashboardState extends State<MobileDashboard> {
   bool _hasFetchedDatabaseSteps = false;
 
   int _waterIntakeMl = 0;
-  final int _dailyWaterGoalMl = 2000; // 2 Liters (approx 8 cups)
+  final int _dailyWaterGoalMl = 2500;
 
   // --- Water Tracking Methods ---
   void _addWater() {
