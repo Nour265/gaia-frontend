@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import 'package:gaia/services/api_service.dart';
 
 class AndroidStepTracker extends StatefulWidget {
   final String authToken; // Pass the JWT token from your login state
@@ -60,9 +63,10 @@ class _AndroidStepTrackerState extends State<AndroidStepTracker> {
   }
 
   Future<void> syncStepsToBackend(int stepCount) async {
-    // Replace with your actual backend IP/URL. 
-    // Use 10.0.2.2 instead of localhost if testing on an Android Emulator.
-    final url = Uri.parse('http://10.0.2.2:8000/steps/sync'); 
+    final effectiveBase = (!kIsWeb && !kReleaseMode && Platform.isAndroid)
+        ? 'http://10.0.2.2:8000'
+        : ApiService.baseUrl;
+    final url = Uri.parse('$effectiveBase/steps/sync');
 
     try {
       final response = await http.post(
