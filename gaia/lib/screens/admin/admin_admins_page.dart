@@ -151,28 +151,34 @@ class _AdminAdminsPageState extends State<AdminAdminsPage> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
-      child: Wrap(
-        runSpacing: 12,
-        spacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text('Admin Management', style: Theme.of(context).textTheme.headlineMedium),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
-            icon: const Icon(Icons.dashboard_outlined),
-            label: const Text('Dashboard'),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Wrap(
+            runSpacing: 12,
+            spacing: 12,
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('Admin Management', style: Theme.of(context).textTheme.headlineMedium),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
+                icon: const Icon(Icons.dashboard_outlined),
+                label: const Text('Dashboard'),
+              ),
+              ElevatedButton.icon(
+                onPressed: _showAddAdminDialog,
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Add Admin'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.purple,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            onPressed: _showAddAdminDialog,
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Add Admin'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.purple,
-              foregroundColor: AppColors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -212,62 +218,67 @@ class _AdminAdminsPageState extends State<AdminAdminsPage> {
     final myId = AuthSession.user?.id;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
-            columns: const [
-              DataColumn(label: Text('Name')),
-              DataColumn(label: Text('Email')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Actions')),
-            ],
-            rows: _admins.map<DataRow>((a) {
-              final isActive = a['is_active'] as bool? ?? true;
-              final id = a['id'] as int;
-              final name = a['name'] as String? ?? '';
-              final isMe = id == myId;
-              return DataRow(cells: [
-                DataCell(Row(children: [
-                  Text(name),
-                  if (isMe) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.purple.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text('You', style: TextStyle(fontSize: 11, color: AppColors.purple, fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ])),
-                DataCell(Text(a['email'] as String? ?? '')),
-                DataCell(_statusChip(isActive)),
-                DataCell(Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: isActive ? 'Deactivate' : 'Activate',
-                      icon: Icon(
-                        isActive ? Icons.block_outlined : Icons.check_circle_outline,
-                        color: isActive ? AppColors.orange : AppColors.turquoise,
-                        size: 20,
-                      ),
-                      onPressed: isMe ? null : () => _toggleStatus(id, isActive),
-                    ),
-                    IconButton(
-                      tooltip: isMe ? 'Cannot delete yourself' : 'Delete',
-                      icon: Icon(Icons.delete_outline, color: isMe ? AppColors.gray.shade700 : AppColors.pink, size: 20),
-                      onPressed: isMe ? null : () => _delete(id, name),
-                    ),
-                  ],
-                )),
-              ]);
-            }).toList(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
+                columns: const [
+                  DataColumn(label: Text('Name')),
+                  DataColumn(label: Text('Email')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: _admins.map<DataRow>((a) {
+                  final isActive = a['is_active'] as bool? ?? true;
+                  final id = a['id'] as int;
+                  final name = a['name'] as String? ?? '';
+                  final isMe = id == myId;
+                  return DataRow(cells: [
+                    DataCell(Row(children: [
+                      Text(name),
+                      if (isMe) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.purple.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('You', style: TextStyle(fontSize: 11, color: AppColors.purple, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ])),
+                    DataCell(Text(a['email'] as String? ?? '')),
+                    DataCell(_statusChip(isActive)),
+                    DataCell(Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: isActive ? 'Deactivate' : 'Activate',
+                          icon: Icon(
+                            isActive ? Icons.block_outlined : Icons.check_circle_outline,
+                            color: isActive ? AppColors.orange : AppColors.turquoise,
+                            size: 20,
+                          ),
+                          onPressed: isMe ? null : () => _toggleStatus(id, isActive),
+                        ),
+                        IconButton(
+                          tooltip: isMe ? 'Cannot delete yourself' : 'Delete',
+                          icon: Icon(Icons.delete_outline, color: isMe ? AppColors.gray.shade700 : AppColors.pink, size: 20),
+                          onPressed: isMe ? null : () => _delete(id, name),
+                        ),
+                      ],
+                    )),
+                  ]);
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ),

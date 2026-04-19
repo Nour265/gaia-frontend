@@ -1246,43 +1246,28 @@ class _ResultsPageState extends State<ResultsPage>
                                 detailsWidget,
                                 if (filteredDoctors.length > 1) ...[
                                   const SizedBox(height: 16),
-                                  Text(
-                                    'All Matching Doctors (${filteredDoctors.length})',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.purple,
+                                  _CollapsibleDoctorList(
+                                    doctors: filteredDoctors,
+                                    activeDoctor: activeDoctor,
+                                    userLocation: _userLocation,
+                                    distance: _distance,
+                                    riskLevel: data['risk_level'] as String,
+                                    etaMinutes: _etaMinutes,
+                                    matchScore: _matchScore,
+                                    matchBadges: _matchBadges,
+                                    onSelect: (doctor) {
+                                      final orig = _doctors.indexOf(doctor);
+                                      if (orig >= 0) {
+                                        setState(() => _selectedDoctorIndex = orig);
+                                        _animateTo(doctor.location, 14.2);
+                                      }
+                                    },
+                                    onFocus: (doctor) => _animateTo(doctor.location, 14.2),
+                                    onBook: (doctor) => _bookAppointment(
+                                      doctor,
+                                      _predictedCondition ?? '',
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  for (var i = 0; i < filteredDoctors.length; i++)
-                                    _DoctorListTile(
-                                      doctor: filteredDoctors[i],
-                                      isSelected: filteredDoctors[i] == activeDoctor,
-                                      distanceKm: _distance.as(
-                                        LengthUnit.Kilometer,
-                                        _userLocation,
-                                        filteredDoctors[i].location,
-                                      ),
-                                      etaMinutes: _etaMinutes(_distance.as(
-                                        LengthUnit.Kilometer,
-                                        _userLocation,
-                                        filteredDoctors[i].location,
-                                      )),
-                                      matchScore: _matchScore(filteredDoctors[i], data['risk_level']),
-                                      badges: _matchBadges(filteredDoctors[i], data['risk_level']),
-                                      onTap: () {
-                                        final orig = _doctors.indexOf(filteredDoctors[i]);
-                                        if (orig >= 0) {
-                                          setState(() => _selectedDoctorIndex = orig);
-                                          _animateTo(filteredDoctors[i].location, 14.2);
-                                        }
-                                      },
-                                      onFocus: () => _animateTo(filteredDoctors[i].location, 14.2),
-                                      onBook: () => _bookAppointment(
-                                        filteredDoctors[i],
-                                        _predictedCondition ?? '',
-                                      ),
-                                    ),
                                 ],
                               ],
                             ],
@@ -1464,6 +1449,113 @@ class _DoctorTemplate {
   final String phone;
   final double northKm;
   final double eastKm;
+}
+
+// ── Collapsible doctor list ───────────────────────────────────────────────────
+
+class _CollapsibleDoctorList extends StatefulWidget {
+  const _CollapsibleDoctorList({
+    required this.doctors,
+    required this.activeDoctor,
+    required this.userLocation,
+    required this.distance,
+    required this.riskLevel,
+    required this.etaMinutes,
+    required this.matchScore,
+    required this.matchBadges,
+    required this.onSelect,
+    required this.onFocus,
+    required this.onBook,
+  });
+
+  final List<_Doctor> doctors;
+  final _Doctor? activeDoctor;
+  final LatLng userLocation;
+  final Distance distance;
+  final String riskLevel;
+  final int Function(double) etaMinutes;
+  final double Function(_Doctor, String) matchScore;
+  final List<String> Function(_Doctor, String) matchBadges;
+  final void Function(_Doctor) onSelect;
+  final void Function(_Doctor) onFocus;
+  final void Function(_Doctor) onBook;
+
+  @override
+  State<_CollapsibleDoctorList> createState() => _CollapsibleDoctorListState();
+}
+
+class _CollapsibleDoctorListState extends State<_CollapsibleDoctorList> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.purple.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.purple.withAlpha(60)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.people_alt_outlined, color: AppColors.purple, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  'All Matching Doctors (${widget.doctors.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.purple,
+                  ),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(Icons.keyboard_arrow_down, color: AppColors.purple),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Column(
+            children: [
+              const SizedBox(height: 8),
+              for (final doctor in widget.doctors)
+                _DoctorListTile(
+                  doctor: doctor,
+                  isSelected: doctor == widget.activeDoctor,
+                  distanceKm: widget.distance.as(
+                    LengthUnit.Kilometer,
+                    widget.userLocation,
+                    doctor.location,
+                  ),
+                  etaMinutes: widget.etaMinutes(widget.distance.as(
+                    LengthUnit.Kilometer,
+                    widget.userLocation,
+                    doctor.location,
+                  )),
+                  matchScore: widget.matchScore(doctor, widget.riskLevel),
+                  badges: widget.matchBadges(doctor, widget.riskLevel),
+                  onTap: () => widget.onSelect(doctor),
+                  onFocus: () => widget.onFocus(doctor),
+                  onBook: () => widget.onBook(doctor),
+                ),
+            ],
+          ),
+          crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 250),
+        ),
+      ],
+    );
+  }
 }
 
 // ── Compact doctor list tile (expandable) ────────────────────────────────────

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
@@ -73,6 +74,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final d = _data!;
     final int totalUsers      = (d['total_users']        as num?)?.toInt() ?? 0;
     final int inactiveUsers   = (d['inactive_users']     as num?)?.toInt() ?? 0;
+    final int activeUsers     = totalUsers - inactiveUsers;
     final int totalDoctors    = (d['total_doctors']      as num?)?.toInt() ?? 0;
     final int activeDoctors   = (d['active_doctors']     as num?)?.toInt() ?? 0;
     final int inactiveDoctors = (d['inactive_doctors']   as num?)?.toInt() ?? 0;
@@ -135,43 +137,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         alert: false,
       ),
       _CardData(
-        title: 'Total Assessments',
-        value: '$totalAssess',
-        sub: '$assessToday today',
-        icon: Icons.assessment_outlined,
-        accentColor: const Color(0xFF8C30F5),
-        bgColor: const Color(0xFFF1E4FF),
-        route: null,
-        alert: false,
-      ),
-      _CardData(
         title: 'Assessments Today',
         value: '$assessToday',
-        sub: 'Completed today',
+        sub: '$totalAssess total',
         icon: Icons.today_outlined,
         accentColor: const Color(0xFF2EC5CE),
         bgColor: const Color(0xFFD5FAFC),
         route: null,
-        alert: false,
-      ),
-      _CardData(
-        title: 'New Patients (7d)',
-        value: '$newUsers',
-        sub: 'Registered this week',
-        icon: Icons.person_add_outlined,
-        accentColor: const Color(0xFFFE9A22),
-        bgColor: const Color(0xFFFFE3C1),
-        route: Routes.adminUsers,
-        alert: false,
-      ),
-      _CardData(
-        title: 'Total Doctors',
-        value: '$totalDoctors',
-        sub: '$activeDoctors active',
-        icon: Icons.badge_outlined,
-        accentColor: const Color(0xFFF22BB2),
-        bgColor: const Color(0xFFFFB1E6),
-        route: Routes.adminDoctors,
         alert: false,
       ),
     ];
@@ -184,21 +156,128 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Text('Admin Dashboard',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text('Tap a card to manage that section.',
+          Text('Overview of system activity and health.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade700)),
           const SizedBox(height: 24),
+
+          // ── Stat cards ──────────────────────────────────────────────────
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isWeb ? 4 : 2,
+              crossAxisCount: isWeb ? 3 : 2,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
-              childAspectRatio: isWeb ? 1.55 : 1.1,
+              childAspectRatio: isWeb ? 1.6 : 1.1,
             ),
             itemCount: cards.length,
             itemBuilder: (_, i) => _buildCard(cards[i]),
           ),
+          const SizedBox(height: 32),
+
+          // ── Charts ──────────────────────────────────────────────────────
+          Text('Charts',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('Visual breakdown of key metrics.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade700)),
+          const SizedBox(height: 16),
+
+          isWeb
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildPatientChart(activeUsers, inactiveUsers, newUsers)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildDoctorChart(activeDoctors, inactiveDoctors)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildAssessmentChart(assessToday, totalAssess)),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildPatientChart(activeUsers, inactiveUsers, newUsers),
+                    const SizedBox(height: 16),
+                    _buildDoctorChart(activeDoctors, inactiveDoctors),
+                    const SizedBox(height: 16),
+                    _buildAssessmentChart(assessToday, totalAssess),
+                  ],
+                ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientChart(int active, int inactive, int newThisWeek) {
+    final total = active + inactive;
+    return _ChartCard(
+      title: 'Patient Status',
+      subtitle: '$total total patients',
+      child: Column(
+        children: [
+          _DonutChart(
+            segments: [
+              _ChartSegment('Active', active, const Color(0xFF8C30F5)),
+              _ChartSegment('Inactive', inactive, const Color(0xFFFE9A22)),
+            ],
+            centerLabel: '$total',
+            centerSublabel: 'patients',
+          ),
+          const SizedBox(height: 16),
+          _LegendRow(items: [
+            _LegendItem('Active', active, const Color(0xFF8C30F5)),
+            _LegendItem('Inactive', inactive, const Color(0xFFFE9A22)),
+            _LegendItem('New (7d)', newThisWeek, const Color(0xFF2EC5CE)),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorChart(int active, int inactive) {
+    final total = active + inactive;
+    return _ChartCard(
+      title: 'Doctor Status',
+      subtitle: '$total total doctors',
+      child: Column(
+        children: [
+          _DonutChart(
+            segments: [
+              _ChartSegment('Active', active, const Color(0xFF2EC5CE)),
+              _ChartSegment('Inactive', inactive, const Color(0xFFF22BB2)),
+            ],
+            centerLabel: '$total',
+            centerSublabel: 'doctors',
+          ),
+          const SizedBox(height: 16),
+          _LegendRow(items: [
+            _LegendItem('Active', active, const Color(0xFF2EC5CE)),
+            _LegendItem('Inactive', inactive, const Color(0xFFF22BB2)),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssessmentChart(int today, int total) {
+    return _ChartCard(
+      title: 'Assessments',
+      subtitle: 'Activity overview',
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _RadialProgressChart(
+            value: total == 0 ? 0 : (today / max(today, total / 30)).clamp(0, 1),
+            label: '$today',
+            sublabel: 'today',
+            color: const Color(0xFF8C30F5),
+          ),
+          const SizedBox(height: 16),
+          _LegendRow(items: [
+            _LegendItem('Total', total, const Color(0xFF8C30F5)),
+            _LegendItem('Today', today, const Color(0xFF2EC5CE)),
+          ]),
         ],
       ),
     );
@@ -228,60 +307,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: c.bgColor,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Icon(c.icon, color: c.accentColor, size: 20),
-                        ),
-                        const Spacer(),
-                        if (clickable)
-                          Icon(Icons.chevron_right, size: 18, color: AppColors.gray.shade700)
-                        else
-                          Tooltip(
-                            message: 'View only',
-                            child: Icon(Icons.info_outline, size: 16, color: AppColors.gray.shade700),
-                          ),
-                      ],
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: c.bgColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(c.icon, color: c.accentColor, size: 22),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.value,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: c.alert ? c.accentColor : AppColors.gray.shade900,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          c.title,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.gray.shade900,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          c.sub,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.gray.shade700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    const SizedBox(height: 10),
+                    Text(
+                      c.value,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: c.alert ? c.accentColor : AppColors.gray.shade900,
+                        height: 1.1,
+                      ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      c.title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      c.sub,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.gray.shade700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (clickable) ...[
+                      const SizedBox(height: 6),
+                      Icon(Icons.arrow_forward, size: 14, color: AppColors.gray.shade700),
+                    ],
                   ],
                 ),
               ),
@@ -293,17 +362,249 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 }
 
-class _CardData {
-  final String title;
-  final String value;
-  final String sub;
-  final IconData icon;
-  final Color accentColor;
-  final Color bgColor;
-  final String? route;
-  final Map<String, dynamic>? routeArgs;
-  final bool alert;
+// ── Chart card wrapper ────────────────────────────────────────────────────────
 
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({required this.title, required this.subtitle, required this.child});
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(subtitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.gray.shade700)),
+            const SizedBox(height: 20),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Donut chart ───────────────────────────────────────────────────────────────
+
+class _ChartSegment {
+  const _ChartSegment(this.label, this.value, this.color);
+  final String label;
+  final int value;
+  final Color color;
+}
+
+class _DonutChart extends StatelessWidget {
+  const _DonutChart({required this.segments, required this.centerLabel, required this.centerSublabel});
+  final List<_ChartSegment> segments;
+  final String centerLabel;
+  final String centerSublabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 140,
+      child: CustomPaint(
+        painter: _DonutPainter(segments: segments),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(centerLabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              Text(centerSublabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.gray.shade700)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  const _DonutPainter({required this.segments});
+  final List<_ChartSegment> segments;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = segments.fold<int>(0, (sum, s) => sum + s.value);
+    if (total == 0) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2;
+    final strokeWidth = radius * 0.38;
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+
+    double startAngle = -pi / 2;
+    for (final seg in segments) {
+      final sweep = 2 * pi * (seg.value / total);
+      canvas.drawArc(
+        rect,
+        startAngle,
+        sweep - 0.03,
+        false,
+        Paint()
+          ..color = seg.color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt,
+      );
+      startAngle += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DonutPainter old) =>
+      old.segments != segments;
+}
+
+// ── Radial progress chart ─────────────────────────────────────────────────────
+
+class _RadialProgressChart extends StatelessWidget {
+  const _RadialProgressChart({
+    required this.value,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+  });
+  final double value;
+  final String label;
+  final String sublabel;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 140,
+      child: CustomPaint(
+        painter: _RadialPainter(value: value, color: color),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800, color: color)),
+              Text(sublabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.gray.shade700)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RadialPainter extends CustomPainter {
+  const _RadialPainter({required this.value, required this.color});
+  final double value;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2;
+    final strokeWidth = radius * 0.38;
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+
+    // Track
+    canvas.drawArc(
+      rect, -pi / 2, 2 * pi, false,
+      Paint()
+        ..color = color.withAlpha(40)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Fill
+    if (value > 0) {
+      canvas.drawArc(
+        rect, -pi / 2, 2 * pi * value, false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RadialPainter old) => old.value != value || old.color != color;
+}
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+
+class _LegendItem {
+  const _LegendItem(this.label, this.value, this.color);
+  final String label;
+  final int value;
+  final Color color;
+}
+
+class _LegendRow extends StatelessWidget {
+  const _LegendRow({required this.items});
+  final List<_LegendItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 16,
+      runSpacing: 8,
+      children: items.map((item) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '${item.label}: ${item.value}',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.gray.shade800, fontWeight: FontWeight.w500),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ── Card data ─────────────────────────────────────────────────────────────────
+
+class _CardData {
   const _CardData({
     required this.title,
     required this.value,
@@ -315,4 +616,14 @@ class _CardData {
     this.routeArgs,
     this.alert = false,
   });
+
+  final String title;
+  final String value;
+  final String sub;
+  final IconData icon;
+  final Color accentColor;
+  final Color bgColor;
+  final String? route;
+  final Map<String, dynamic>? routeArgs;
+  final bool alert;
 }

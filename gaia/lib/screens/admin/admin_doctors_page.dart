@@ -155,28 +155,34 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
-      child: Wrap(
-        runSpacing: 12,
-        spacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text('Doctor Management', style: Theme.of(context).textTheme.headlineMedium),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
-            icon: const Icon(Icons.dashboard_outlined),
-            label: const Text('Dashboard'),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Wrap(
+            runSpacing: 12,
+            spacing: 12,
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('Doctor Management', style: Theme.of(context).textTheme.headlineMedium),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
+                icon: const Icon(Icons.dashboard_outlined),
+                label: const Text('Dashboard'),
+              ),
+              ElevatedButton.icon(
+                onPressed: _showAddDoctorDialog,
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Add Doctor'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.turquoise,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            onPressed: _showAddDoctorDialog,
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Add Doctor'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.turquoise,
-              foregroundColor: AppColors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -221,52 +227,57 @@ class _AdminDoctorsPageState extends State<AdminDoctorsPage> {
   Widget _buildWebTable() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
-            columns: const [
-              DataColumn(label: Text('Name')),
-              DataColumn(label: Text('Email')),
-              DataColumn(label: Text('Specialty')),
-              DataColumn(label: Text('Phone')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Actions')),
-            ],
-            rows: _doctors.map<DataRow>((d) {
-              final isActive = d['is_active'] ?? false;
-              final id = d['id'] as int;
-              final name = d['name'] ?? '';
-              return DataRow(cells: [
-                DataCell(Text(name)),
-                DataCell(Text(d['email'] ?? '')),
-                DataCell(Text(d['specialty'] ?? '-')),
-                DataCell(Text(d['phone'] ?? '-')),
-                DataCell(_statusChip(isActive)),
-                DataCell(Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: isActive ? 'Deactivate' : 'Activate',
-                      icon: Icon(
-                        isActive ? Icons.block_outlined : Icons.check_circle_outline,
-                        color: isActive ? AppColors.orange : AppColors.turquoise,
-                        size: 20,
-                      ),
-                      onPressed: () => _toggleStatus(id, isActive),
-                    ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: Icon(Icons.delete_outline, color: AppColors.pink, size: 20),
-                      onPressed: () => _deleteDoctor(id, name),
-                    ),
-                  ],
-                )),
-              ]);
-            }).toList(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
+                columns: const [
+                  DataColumn(label: Text('Name')),
+                  DataColumn(label: Text('Email')),
+                  DataColumn(label: Text('Specialty')),
+                  DataColumn(label: Text('Phone')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: _doctors.map<DataRow>((d) {
+                  final isActive = d['is_active'] ?? false;
+                  final id = d['id'] as int;
+                  final name = d['name'] ?? '';
+                  return DataRow(cells: [
+                    DataCell(Text(name)),
+                    DataCell(Text(d['email'] ?? '')),
+                    DataCell(Text(d['specialty'] ?? '-')),
+                    DataCell(Text(d['phone'] ?? '-')),
+                    DataCell(_statusChip(isActive)),
+                    DataCell(Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: isActive ? 'Deactivate' : 'Activate',
+                          icon: Icon(
+                            isActive ? Icons.block_outlined : Icons.check_circle_outline,
+                            color: isActive ? AppColors.orange : AppColors.turquoise,
+                            size: 20,
+                          ),
+                          onPressed: () => _toggleStatus(id, isActive),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: Icon(Icons.delete_outline, color: AppColors.pink, size: 20),
+                          onPressed: () => _deleteDoctor(id, name),
+                        ),
+                      ],
+                    )),
+                  ]);
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ),

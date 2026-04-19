@@ -272,30 +272,36 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
-      child: Wrap(
-        runSpacing: 12,
-        spacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text('User Management', style: Theme.of(context).textTheme.headlineMedium),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
-            icon: const Icon(Icons.dashboard_outlined),
-            label: const Text('Dashboard'),
-          ),
-          ElevatedButton.icon(
-            onPressed: _showCreateUserDialog,
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Add User'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.purple,
-              foregroundColor: AppColors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Wrap(
+            runSpacing: 12,
+            spacing: 12,
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('User Management', style: Theme.of(context).textTheme.headlineMedium),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, Routes.adminDashboard),
+                icon: const Icon(Icons.dashboard_outlined),
+                label: const Text('Dashboard'),
               ),
-            ),
+              ElevatedButton.icon(
+                onPressed: _showCreateUserDialog,
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Add User'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.purple,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -340,67 +346,72 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   Widget _buildWebTable() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
-            columns: const [
-              DataColumn(label: Text('Name')),
-              DataColumn(label: Text('Email')),
-              DataColumn(label: Text('Role')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Phone')),
-              DataColumn(label: Text('Location')),
-              DataColumn(label: Text('Actions')),
-            ],
-            rows: _users.map<DataRow>((u) {
-              final isActive = u['is_active'] ?? false;
-              final role = u['role'] ?? 'user';
-              final id = u['id'] as int;
-              final name = u['name'] ?? '';
-              return DataRow(cells: [
-                DataCell(Text(name)),
-                DataCell(Text(u['email'] ?? '')),
-                DataCell(
-                  GestureDetector(
-                    onTap: () => _changeRole(id, role),
-                    child: Row(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: WidgetStateProperty.all(AppColors.gray.shade100),
+                columns: const [
+                  DataColumn(label: Text('Name')),
+                  DataColumn(label: Text('Email')),
+                  DataColumn(label: Text('Role')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Phone')),
+                  DataColumn(label: Text('Location')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: _users.map<DataRow>((u) {
+                  final isActive = u['is_active'] ?? false;
+                  final role = u['role'] ?? 'user';
+                  final id = u['id'] as int;
+                  final name = u['name'] ?? '';
+                  return DataRow(cells: [
+                    DataCell(Text(name)),
+                    DataCell(Text(u['email'] ?? '')),
+                    DataCell(
+                      GestureDetector(
+                        onTap: () => _changeRole(id, role),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _roleChip(role),
+                            const SizedBox(width: 4),
+                            Icon(Icons.edit_outlined, size: 14, color: AppColors.gray.shade700),
+                          ],
+                        ),
+                      ),
+                    ),
+                    DataCell(_statusChip(isActive)),
+                    DataCell(Text(u['phone'] ?? '-')),
+                    DataCell(Text(u['location'] ?? '-')),
+                    DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _roleChip(role),
-                        const SizedBox(width: 4),
-                        Icon(Icons.edit_outlined, size: 14, color: AppColors.gray.shade700),
+                        IconButton(
+                          tooltip: isActive ? 'Deactivate' : 'Activate',
+                          icon: Icon(
+                            isActive ? Icons.block_outlined : Icons.check_circle_outline,
+                            color: isActive ? AppColors.orange : AppColors.turquoise,
+                            size: 20,
+                          ),
+                          onPressed: () => _toggleStatus(id, isActive),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: Icon(Icons.delete_outline, color: AppColors.pink, size: 20),
+                          onPressed: () => _deleteUser(id, name),
+                        ),
                       ],
-                    ),
-                  ),
-                ),
-                DataCell(_statusChip(isActive)),
-                DataCell(Text(u['phone'] ?? '-')),
-                DataCell(Text(u['location'] ?? '-')),
-                DataCell(Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: isActive ? 'Deactivate' : 'Activate',
-                      icon: Icon(
-                        isActive ? Icons.block_outlined : Icons.check_circle_outline,
-                        color: isActive ? AppColors.orange : AppColors.turquoise,
-                        size: 20,
-                      ),
-                      onPressed: () => _toggleStatus(id, isActive),
-                    ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: Icon(Icons.delete_outline, color: AppColors.pink, size: 20),
-                      onPressed: () => _deleteUser(id, name),
-                    ),
-                  ],
-                )),
-              ]);
-            }).toList(),
+                    )),
+                  ]);
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ),

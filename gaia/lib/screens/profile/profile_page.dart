@@ -423,7 +423,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           style: textTheme.bodyMedium?.copyWith(
                                             color: _locationDisplay != null
                                                 ? AppColors.gray.shade900
-                                                : AppColors.gray.shade600,
+                                                : AppColors.gray.shade700,
                                           ),
                                         ),
                                       ],
