@@ -1,0 +1,7 @@
+#!/bin/bash
+git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+export PATH="$PATH:/tmp/flutter/bin"
+flutter pub get
+flutter build web --release \
+  --dart-define=API_BASE_URL=$API_BASE_URL \
+  --dart-define=GAIA_GOOGLE_CLIENT_ID=$GAIA_GOOGLE_CLIENT_ID
