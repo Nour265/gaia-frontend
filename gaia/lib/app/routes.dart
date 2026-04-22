@@ -20,6 +20,7 @@ import '../screens/Information/info.dart';
 import '../screens/step_tracking/step_tracker.dart';
 import '../screens/doctor/doctor_dashboard_page.dart';
 import '../screens/user/my_appointments_page.dart';
+import '../screens/contact/contact_page.dart';
 import '../services/auth_session.dart';
 
 // This class centralizes all route names and their corresponding screens.
@@ -40,6 +41,7 @@ class Routes {
 
   // Route name for the about/disclaimer page.
   static const String about = '/about';
+  static const String contact = '/contact';
   static const String blog = '/blog';
   static const String blogArticle = '/blog/article';
   static const String healthTracking = '/health-tracking';
@@ -72,6 +74,7 @@ class Routes {
 
     // When Flutter navigates to '/about', it builds the AboutPage widget.
     about: (_) => const AboutPage(),
+    contact: (_) => const ContactPage(),
 
     // When Flutter navigates to '/blog', it builds the BlogPage widget.
     blog: (_) => const BlogPage(),

@@ -32,9 +32,98 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _buildHero(BuildContext context, Size size, TextTheme textTheme) {
+    final isMobile = size.width < 700;
+    final contentWidth = isMobile ? size.width - 32 : size.width * 0.7;
+
+    final textColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _eyebrow('Our Mission', textTheme, color: AppColors.gray.shade700),
+        const SizedBox(height: 10),
+        Text('About GAIA', style: textTheme.displayMedium?.copyWith(height: 1.05)),
+        const SizedBox(height: 16),
+        Text(
+          'GAIA is a privacy-first symptom checker built to help you '
+          'understand what your symptoms could mean and what to do next.',
+          style: textTheme.bodyLarge?.copyWith(color: AppColors.gray.shade800, height: 1.6),
+        ),
+        const SizedBox(height: 24),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _pill(textTheme, 'Fast guidance'),
+            _pill(textTheme, 'Evidence-informed'),
+            _pill(textTheme, 'Private by design'),
+            _pill(textTheme, 'Clear next steps'),
+          ],
+        ),
+        const SizedBox(height: 28),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              height: 46,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pushNamed(context, Routes.wizard),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.purple,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Start Symptom Check',
+                  style: textTheme.titleSmall?.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 46,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pushNamed(context, Routes.landing),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.gray.shade900,
+                  side: BorderSide(color: AppColors.gray.shade300),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  'Back to Home',
+                  style: textTheme.titleSmall?.copyWith(color: AppColors.gray.shade900, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final imageCard = Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.purple.shade100, AppColors.turquoise.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(color: AppColors.purple.shade100, blurRadius: 30, offset: const Offset(0, 18)),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(22)),
+        child: Image.asset(ImagePath.consult, fit: BoxFit.contain),
+      ),
+    );
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 84),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 48 : 84),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.white, AppColors.gray.shade100],
@@ -45,177 +134,36 @@ class AboutPage extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            right: -80,
-            top: -40,
-            child: _glowBubble(
-              color: AppColors.purple.withOpacity(0.18),
-              size: 220,
+          if (!isMobile) ...[
+            Positioned(
+              right: -80, top: -40,
+              child: _glowBubble(color: AppColors.purple.withValues(alpha: 0.18), size: 220),
             ),
-          ),
-          Positioned(
-            left: -60,
-            bottom: -80,
-            child: _glowBubble(
-              color: AppColors.turquoise.withOpacity(0.18),
-              size: 200,
+            Positioned(
+              left: -60, bottom: -80,
+              child: _glowBubble(color: AppColors.turquoise.withValues(alpha: 0.18), size: 200),
             ),
-          ),
-          Positioned(
-            right: 140,
-            bottom: -30,
-            child: _glowBubble(
-              color: AppColors.orange.withOpacity(0.16),
-              size: 140,
+            Positioned(
+              right: 140, bottom: -30,
+              child: _glowBubble(color: AppColors.orange.withValues(alpha: 0.16), size: 140),
             ),
-          ),
+          ],
           Center(
             child: SizedBox(
-              width: size.width * 0.7,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              width: contentWidth,
+              child: isMobile
+                  ? textColumn
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        _eyebrow(
-                          'Our Mission',
-                          textTheme,
-                          color: AppColors.gray.shade700,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'About GAIA',
-                          style: textTheme.displayMedium?.copyWith(
-                            height: 1.05,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'GAIA is a privacy-first symptom checker built to help you '
-                          'understand what your symptoms could mean and what to do next.',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: AppColors.gray.shade800,
-                            height: 1.6,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _pill(textTheme, 'Fast guidance'),
-                            _pill(textTheme, 'Evidence-informed'),
-                            _pill(textTheme, 'Private by design'),
-                            _pill(textTheme, 'Clear next steps'),
-                          ],
-                        ),
-                        const SizedBox(height: 28),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            SizedBox(
-                              height: 46,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, Routes.wizard);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.purple,
-                                  foregroundColor: AppColors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Text(
-                                  'Start Symptom Check',
-                                  style: textTheme.titleSmall?.copyWith(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              height: 46,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, Routes.landing);
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.gray.shade900,
-                                  side: BorderSide(
-                                    color: AppColors.gray.shade300,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Back to Home',
-                                  style: textTheme.titleSmall?.copyWith(
-                                    color: AppColors.gray.shade900,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        Expanded(flex: 3, child: textColumn),
+                        const SizedBox(width: 32),
+                        Expanded(
+                          flex: 2,
+                          child: Align(alignment: Alignment.centerRight, child: imageCard),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 32),
-                  Expanded(
-                    flex: 2,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.purple.shade100,
-                              AppColors.turquoise.shade100,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(26),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.purple.shade100,
-                              blurRadius: 30,
-                              offset: const Offset(0, 18),
-                            ),
-                          ],
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: Image.asset(
-                            ImagePath.consult,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -236,7 +184,7 @@ class AboutPage extends StatelessWidget {
       ),
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Wrap(
             spacing: 24,
             runSpacing: 16,
@@ -274,7 +222,7 @@ class AboutPage extends StatelessWidget {
       color: AppColors.turquoise,
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -284,7 +232,7 @@ class AboutPage extends StatelessWidget {
                 textTheme,
                 titleColor: AppColors.white,
                 accentColor: AppColors.white,
-                eyebrowColor: AppColors.white.withOpacity(0.85),
+                eyebrowColor: AppColors.white.withValues(alpha: 0.85),
               ),
               const SizedBox(height: 24),
               Wrap(
@@ -355,7 +303,7 @@ class AboutPage extends StatelessWidget {
       ),
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -398,7 +346,7 @@ class AboutPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 72),
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -454,7 +402,7 @@ class AboutPage extends StatelessWidget {
       color: AppColors.turquoise,
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -464,7 +412,7 @@ class AboutPage extends StatelessWidget {
                 textTheme,
                 titleColor: AppColors.white,
                 accentColor: AppColors.white,
-                eyebrowColor: AppColors.white.withOpacity(0.85),
+                eyebrowColor: AppColors.white.withValues(alpha: 0.85),
               ),
               const SizedBox(height: 20),
               _FaqItem(

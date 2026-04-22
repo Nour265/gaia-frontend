@@ -9,15 +9,17 @@ class Heros extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
 
-    // Control these two to move/size the mockup
-    final double mockupWidth = size.width * 0.36; // bigger than 0.33
-    final double mockupDown = 90; // move down more
-    final double mockupRightPadding = 24; // push further to the right
+    final double mockupWidth = size.width * 0.36;
+    final double mockupDown = 90;
+    final double mockupRightPadding = 24;
+
+    final contentWidth = isMobile ? size.width - 32 : size.width * 0.7;
 
     return Container(
       width: size.width,
-      height: size.height * 0.7,
+      height: isMobile ? size.height * 0.55 : size.height * 0.7,
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage(ImagePath.background),
@@ -26,45 +28,40 @@ class Heros extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 90),
-
-          // page content width
+          SizedBox(height: isMobile ? 48 : 90),
           SizedBox(
-            width: size.width * 0.7,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // LEFT: text
-                Expanded(
-                  flex: 3, // give text more room so image sits more to the right
-                  child: _buildContent(context, textTheme),
-                ),
-
-                // gap between text and image (adjust as needed)
-                SizedBox(width: size.width * 0.02),
-
-                // RIGHT: mockup
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: mockupRightPadding),
-                    child: Align(
-                      alignment: Alignment.topRight,
-                      child: Transform.translate(
-                        offset: Offset(0, mockupDown),
-                        child: SizedBox(
-                          width: mockupWidth,
-                          child: Image.asset(
-                            ImagePath.desktop,
-                            fit: BoxFit.contain,
+            width: contentWidth,
+            child: isMobile
+                ? _buildContent(context, textTheme)
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _buildContent(context, textTheme),
+                      ),
+                      SizedBox(width: size.width * 0.02),
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: mockupRightPadding),
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: Transform.translate(
+                              offset: Offset(0, mockupDown),
+                              child: SizedBox(
+                                width: mockupWidth,
+                                child: Image.asset(
+                                  ImagePath.desktop,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

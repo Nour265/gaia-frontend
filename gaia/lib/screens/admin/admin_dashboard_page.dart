@@ -4,6 +4,7 @@ import 'package:gaia/app/routes.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
 import 'package:gaia/widgets/navbar.dart';
+import 'admin_messages_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
@@ -203,6 +204,64 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildAssessmentChart(assessToday, totalAssess),
                   ],
                 ),
+          const SizedBox(height: 32),
+
+          // ── Support messages shortcut ────────────────────────────────────
+          Text('Support',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('Manage user support conversations.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade700)),
+          const SizedBox(height: 16),
+          Card(
+            elevation: 1,
+            shadowColor: Colors.black12,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminMessagesPage()),
+              ),
+              mouseCursor: SystemMouseCursors.click,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8C30F5), Color(0xFF2EC5CE)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.forum_outlined, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Support Messages',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                          const SizedBox(height: 2),
+                          Text('View and reply to user conversations',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.gray.shade700,
+                                  )),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray.shade600),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 32),
         ],
       ),

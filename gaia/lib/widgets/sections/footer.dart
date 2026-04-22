@@ -26,7 +26,7 @@ class Footer extends StatelessWidget {
       ),
       child: Center(
         child: SizedBox(
-          width: size.width * 0.7,
+          width: size.width < 980 ? size.width - 32 : size.width * 0.7,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 64),
             child: DefaultTextStyle.merge(
@@ -125,7 +125,12 @@ class Footer extends StatelessWidget {
                               color: dim,
                             ),
                             const SizedBox(height: 10),
-                            Text('Contact', style: TextStyle(color: dim)),
+                            _footerLink(
+                              context,
+                              label: 'Contact',
+                              onTap: () => Navigator.pushNamed(context, Routes.contact),
+                              color: dim,
+                            ),
                             const SizedBox(height: 10),
                             Text('Blog', style: TextStyle(color: dim)),
                             const SizedBox(height: 10),

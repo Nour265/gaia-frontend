@@ -40,33 +40,66 @@ class NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width < 700;
+
     return SizedBox(
       height: 72.0,
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                const Logo(),
-                const SizedBox(width: 24.0),
-                Expanded(
-                  child: Align(
+      child: isMobile
+          ? _buildMobileRow(context)
+          : _buildDesktopRow(context),
+    );
+  }
+
+  Widget _buildDesktopRow(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              const Logo(),
+              const SizedBox(width: 24.0),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: _buildItems(context, textTheme),
-                    ),
+                    child: _buildItems(context, textTheme),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16.0),
-          if (showLogin) const ImageLinks(),
-        ],
-      ),
+        ),
+        const SizedBox(width: 16.0),
+        if (showLogin) const ImageLinks(),
+      ],
+    );
+  }
+
+  Widget _buildMobileRow(BuildContext context) {
+    return Row(
+      children: [
+        const Logo(),
+        const Spacer(),
+        if (showLogin)
+          IconButton(
+            onPressed: () => _openMobileMenu(context),
+            icon: Icon(Icons.menu, color: AppColors.gray.shade800, size: 26),
+            tooltip: 'Menu',
+          ),
+      ],
+    );
+  }
+
+  void _openMobileMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MobileNavSheet(parentContext: context),
     );
   }
 
@@ -83,7 +116,11 @@ class NavBar extends StatelessWidget {
           onTap: () => Navigator.pushNamed(context, Routes.about),
         ),
         const SizedBox(width: 24.0),
-        NavItem(label: 'Contact', style: itemStyle, onTap: () {}),
+        NavItem(
+          label: 'Contact',
+          style: itemStyle,
+          onTap: () => Navigator.pushNamed(context, Routes.contact),
+        ),
         const SizedBox(width: 24.0),
         NavItem(
           label: 'Blog',
@@ -102,7 +139,6 @@ class NavBar extends StatelessWidget {
           style: itemStyle,
           onTap: () => Navigator.pushNamed(context, Routes.healthTracking),
         ),
-        // Show role-specific dashboard link when logged in
         if (user != null && user.isDoctor) ...[
           const SizedBox(width: 24.0),
           NavItem(
@@ -122,6 +158,177 @@ class NavBar extends StatelessWidget {
     );
   }
 }
+
+// ── Mobile bottom-sheet nav ───────────────────────────────────────────────────
+
+class _MobileNavSheet extends StatelessWidget {
+  const _MobileNavSheet({required this.parentContext});
+
+  final BuildContext parentContext;
+
+  void _go(String route) {
+    Navigator.pop(parentContext); // close sheet
+    Navigator.pushNamed(parentContext, route);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = AuthSession.user;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray.shade300,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Logo
+          const Logo(),
+          const SizedBox(height: 20),
+          Divider(color: AppColors.gray.shade200),
+          const SizedBox(height: 8),
+
+          // Nav items
+          _SheetItem(label: 'About', icon: Icons.info_outline,
+              onTap: () => _go(Routes.about)),
+          _SheetItem(label: 'Contact', icon: Icons.chat_bubble_outline,
+              onTap: () => _go(Routes.contact)),
+          _SheetItem(label: 'Blog', icon: Icons.article_outlined,
+              onTap: () => _go(Routes.blog)),
+          _SheetItem(label: 'Symptoms', icon: Icons.health_and_safety_outlined,
+              onTap: () => _go(Routes.symptoms)),
+          _SheetItem(label: 'Health Tracking', icon: Icons.monitor_heart_outlined,
+              onTap: () => _go(Routes.healthTracking)),
+
+          if (user != null && user.isDoctor)
+            _SheetItem(
+              label: 'My Dashboard',
+              icon: Icons.dashboard_outlined,
+              onTap: () => _go(Routes.doctorDashboard),
+              color: AppColors.purple,
+            )
+          else if (user != null)
+            _SheetItem(
+              label: 'My Appointments',
+              icon: Icons.calendar_today_outlined,
+              onTap: () => _go(Routes.myAppointments),
+              color: AppColors.turquoise,
+            ),
+
+          const SizedBox(height: 8),
+          Divider(color: AppColors.gray.shade200),
+          const SizedBox(height: 8),
+
+          // Auth section
+          ValueListenableBuilder<AuthUser?>(
+            valueListenable: AuthSession.userNotifier,
+            builder: (context, authUser, _) {
+              if (authUser != null) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (authUser.isAdmin)
+                      _SheetItem(
+                        label: 'Dashboard',
+                        icon: Icons.admin_panel_settings_outlined,
+                        onTap: () => _go(Routes.adminDashboard),
+                      ),
+                    _SheetItem(
+                      label: 'Profile',
+                      icon: Icons.person_outline,
+                      onTap: () => _go(Routes.profile),
+                    ),
+                    _SheetItem(
+                      label: 'Logout',
+                      icon: Icons.logout,
+                      onTap: () {
+                        Navigator.pop(parentContext);
+                        AuthSession.clear();
+                        Navigator.pushNamedAndRemoveUntil(
+                          parentContext,
+                          Routes.landing,
+                          (route) => false,
+                        );
+                      },
+                      color: Colors.red.shade600,
+                    ),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SheetItem(label: 'Login', icon: Icons.login,
+                      onTap: () => _go(Routes.login)),
+                  _SheetItem(label: 'Sign Up', icon: Icons.person_add_alt_1,
+                      onTap: () => _go(Routes.signup)),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetItem extends StatelessWidget {
+  const _SheetItem({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final effectiveColor = color ?? AppColors.gray.shade800;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: effectiveColor),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: textTheme.bodyLarge?.copyWith(
+                color: effectiveColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Existing widgets (unchanged) ──────────────────────────────────────────────
 
 class ImageLinks extends StatelessWidget {
   const ImageLinks({Key? key}) : super(key: key);

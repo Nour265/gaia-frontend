@@ -31,64 +31,71 @@ class Features extends StatelessWidget {
               style: lead1,
             ),
             const SizedBox(height: 48),
-            Wrap(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon1),
-                    title: 'Symptom-to-Guidance Flow',
-                    description: 'A structured step-by-step wizard collects symptoms and provides clear next-step guidance.',
+            Builder(builder: (context) {
+              final cardWidth = size.width < 600
+                  ? size.width - 64
+                  : size.width < 900
+                      ? (size.width - 80) / 2
+                      : size.width / 4;
+              return Wrap(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon1),
+                      title: 'Symptom-to-Guidance Flow',
+                      description: 'A structured step-by-step wizard collects symptoms and provides clear next-step guidance.',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon2),
-                    title: 'Personalized Recommendations',
-                    description: 'Recommendations adapt to user inputs such as symptom severity, duration, and key risk factors.',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon2),
+                      title: 'Personalized Recommendations',
+                      description: 'Recommendations adapt to user inputs such as symptom severity, duration, and key risk factors.',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon3),
-                    title: 'Clear and Simple UI',
-                    description: 'Designed to be easy to use, with plain language explanations and a calm medical interface.',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon3),
+                      title: 'Clear and Simple UI',
+                      description: 'Designed to be easy to use, with plain language explanations and a calm medical interface.',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon4),
-                    title: 'Multiple Entry Paths',
-                    description: 'Users can start from symptoms, body area, or common complaints for faster navigation.',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon4),
+                      title: 'Multiple Entry Paths',
+                      description: 'Users can start from symptoms, body area, or common complaints for faster navigation.',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon5),
-                    title: 'AI-Assisted Decision Support',
-                    description: 'Machine learning supports consistent triage suggestions, while keeping safety rules in place.',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon5),
+                      title: 'AI-Assisted Decision Support',
+                      description: 'Machine learning supports consistent triage suggestions, while keeping safety rules in place.',
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FeatureItem(
-                    width: size.width / 4,
-                    icon: Image.asset(ImagePath.featureIcon6),
-                    title: 'Safety and Disclaimer Built-in',
-                    description: 'GAIA emphasizes that it is not a diagnosis and highlights urgent-care scenarios when needed.',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: FeatureItem(
+                      width: cardWidth,
+                      icon: Image.asset(ImagePath.featureIcon6),
+                      title: 'Safety and Disclaimer Built-in',
+                      description: 'GAIA emphasizes that it is not a diagnosis and highlights urgent-care scenarios when needed.',
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
             const SizedBox(height: 60),
           ],
         ),

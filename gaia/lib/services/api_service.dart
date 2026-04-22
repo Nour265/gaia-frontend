@@ -494,6 +494,82 @@ class ApiService {
     }
   }
 
+  // ── Contact / Support Chat ──────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> createContactThread() async {
+    final response = await _post(Uri.parse("$baseUrl/contact/threads"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getMyContactThread() async {
+    final response = await _get(Uri.parse("$baseUrl/contact/threads/me"));
+    if (response.statusCode == 404) return null;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> sendContactMessage({
+    required int threadId,
+    required String content,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/contact/threads/$threadId/messages"),
+      body: jsonEncode({"content": content}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<List<dynamic>> getAdminContactThreads() async {
+    final response = await _get(Uri.parse("$baseUrl/contact/threads"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAdminContactThread(int threadId) async {
+    final response = await _get(Uri.parse("$baseUrl/contact/threads/$threadId/messages"));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminReplyContactThread({
+    required int threadId,
+    required String content,
+  }) async {
+    final response = await _post(
+      Uri.parse("$baseUrl/contact/threads/$threadId/reply"),
+      body: jsonEncode({"content": content}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
+  static Future<void> closeContactThread(int threadId) async {
+    final response = await _put(Uri.parse("$baseUrl/contact/threads/$threadId/close"));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw _buildApiException("Contact", response);
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> fetchWaterHistory() async {
     final response = await _get(Uri.parse("$baseUrl/water/history"));
     if (response.statusCode >= 200 && response.statusCode < 300) {
