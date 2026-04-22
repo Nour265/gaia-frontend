@@ -11,6 +11,35 @@ class Stats extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
+
+    if (isMobile) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Trusted Healthcare Guidance, Backed by Data',
+              style: textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            Text('Helping people make safer health decisions every day.', style: lead1),
+            const SizedBox(height: 32),
+            const Wrap(
+              spacing: 24,
+              runSpacing: 24,
+              children: [
+                StatsSegment(icon: ImagePath.featureIcon1, title: '250,000+', subtitle: 'Checks Completed'),
+                StatsSegment(icon: ImagePath.featureIcon4, title: '92%', subtitle: 'User Satisfaction'),
+                StatsSegment(icon: ImagePath.featureIcon5, title: '< 30s', subtitle: 'Response Time'),
+                StatsSegment(icon: ImagePath.featureIcon7, title: '24/7', subtitle: 'Availability'),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 80.0),
@@ -28,8 +57,6 @@ class Stats extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text('Helping people make safer health decisions every day.', style: lead1),
-
-                   
               ],
             ),
           ),

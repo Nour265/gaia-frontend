@@ -69,16 +69,21 @@ class Heros extends StatelessWidget {
   }
 
   Column _buildContent(BuildContext context, TextTheme textTheme) {
-    // If your text is too big, change displayLarge to displayMedium (or apply copyWith(fontSize: ...))
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
+    final headlineStyle = isMobile
+        ? textTheme.displaySmall   // 40px on mobile
+        : textTheme.displayMedium; // 48px on desktop
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 90),
-        Text('Your Health.', style: textTheme.displayMedium),
-        const SizedBox(height: 24),
-        Text('Our Priority.', style: textTheme.displayMedium),
-        const SizedBox(height: 40),
+        SizedBox(height: isMobile ? 24 : 90),
+        Text('Your Health.', style: headlineStyle),
+        const SizedBox(height: 16),
+        Text('Our Priority.', style: headlineStyle),
+        SizedBox(height: isMobile ? 24 : 40),
         TextButton(
           onPressed: () {
             Navigator.pushNamed(context, Routes.wizard);

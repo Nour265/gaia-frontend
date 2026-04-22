@@ -9,6 +9,7 @@ class Testimonials extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
     final contentWidth = size.width < 980 ? size.width * 0.9 : size.width * 0.7;
 
     final stepCards = [
@@ -46,9 +47,8 @@ class Testimonials extends StatelessWidget {
                 children: [
                   Text(
                     'How GAIA Guides You',
-                    style: textTheme.displayMedium?.copyWith(
-                      color: AppColors.white,
-                    ),
+                    style: (isMobile ? textTheme.headlineLarge : textTheme.displayMedium)
+                        ?.copyWith(color: AppColors.white),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(

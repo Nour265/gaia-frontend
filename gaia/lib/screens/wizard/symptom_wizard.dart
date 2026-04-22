@@ -272,49 +272,59 @@ class _SymptomWizardState extends State<SymptomWizard> {
           Expanded(
             child: Scrollbar(
               controller: _screeningScrollController,
-              thumbVisibility: true,                  
+              thumbVisibility: true,
               thickness: 6.0,
               radius: const Radius.circular(8),
               child: SingleChildScrollView(
-                controller: _screeningScrollController, 
-                padding: const EdgeInsets.only(right: 16), // Adds space so scrollbar doesn't cover text
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // LEFT COLUMN (Evens: Pain, Respiratory, Skin, Urinary)
-                    Expanded(
-                      child: Column(
+                controller: _screeningScrollController,
+                padding: const EdgeInsets.only(right: 16),
+                child: MediaQuery.of(context).size.width < 700
+                    ? Column(
                         children: [
-                          for (int i = 0; i < _screeningQuestions.length; i += 2)
+                          for (final q in _screeningQuestions)
                             _buildScreeningTile(
-                              _screeningQuestions[i]['question']!,
-                              _screeningQuestions[i]['category']!,
-                              _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
+                              q['question']!,
+                              q['category']!,
+                              _selectedCategoryScreens.contains(q['category']),
                               activeColor,
                               theme,
                             ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 16), // Spacing between the 2 columns
-                    
-                    // RIGHT COLUMN (Odds: Abdominal, Neurological, Head/Eye/Ear, Systemic)
-                    Expanded(
-                      child: Column(
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (int i = 1; i < _screeningQuestions.length; i += 2)
-                            _buildScreeningTile(
-                              _screeningQuestions[i]['question']!,
-                              _screeningQuestions[i]['category']!,
-                              _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
-                              activeColor,
-                              theme,
+                          Expanded(
+                            child: Column(
+                              children: [
+                                for (int i = 0; i < _screeningQuestions.length; i += 2)
+                                  _buildScreeningTile(
+                                    _screeningQuestions[i]['question']!,
+                                    _screeningQuestions[i]['category']!,
+                                    _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
+                                    activeColor,
+                                    theme,
+                                  ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                for (int i = 1; i < _screeningQuestions.length; i += 2)
+                                  _buildScreeningTile(
+                                    _screeningQuestions[i]['question']!,
+                                    _screeningQuestions[i]['category']!,
+                                    _selectedCategoryScreens.contains(_screeningQuestions[i]['category']),
+                                    activeColor,
+                                    theme,
+                                  ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -573,25 +583,28 @@ class _SymptomWizardState extends State<SymptomWizard> {
                     thumbVisibility: true,         // 2. Forces scrollbar to always show!
                     thickness: 6.0,                // Optional: make it a bit thicker
                     radius: const Radius.circular(8),
-                  child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 4,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: stepData.symptoms.length,
-                    itemBuilder: (context, index) {
-                      final symptom = stepData.symptoms[index];
-                      final isSelected = _selectedSymptoms.contains(symptom);
-                      return _buildSymptomTile(
-                        symptom,
-                        isSelected,
-                        activeColor,
-                        theme,
-                      );
-                    },
-                  ),
+                  child: Builder(builder: (context) {
+                    final crossAxisCount = MediaQuery.of(context).size.width < 700 ? 2 : 4;
+                    return GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        childAspectRatio: crossAxisCount == 2 ? 3.0 : 4.0,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: stepData.symptoms.length,
+                      itemBuilder: (context, index) {
+                        final symptom = stepData.symptoms[index];
+                        final isSelected = _selectedSymptoms.contains(symptom);
+                        return _buildSymptomTile(
+                          symptom,
+                          isSelected,
+                          activeColor,
+                          theme,
+                        );
+                      },
+                    );
+                  }),
           ),
           ),
 
