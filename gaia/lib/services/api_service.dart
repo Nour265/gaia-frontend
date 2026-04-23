@@ -386,12 +386,14 @@ class ApiService {
     required double lat,
     required double lng,
     String? condition,
+    String? riskLevel,
     double radiusKm = 50.0,
   }) async {
     final uri = Uri.parse("$baseUrl/doctors/nearby").replace(queryParameters: {
       "lat": lat.toString(),
       "lng": lng.toString(),
       if (condition != null && condition.isNotEmpty) "condition": condition,
+      if (riskLevel != null && riskLevel.isNotEmpty) "risk_level": riskLevel,
       "radius_km": radiusKm.toString(),
     });
     final response = await _get(uri);

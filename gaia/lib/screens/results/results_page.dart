@@ -92,6 +92,7 @@ class _ResultsPageState extends State<ResultsPage>
   bool _mapReady = false;
   AnimationController? _mapAnimationController;
   String? _predictedCondition;
+  String? _riskLevel;
   bool _isBooking = false;
 
   bool get _supportsGeolocator {
@@ -422,6 +423,7 @@ class _ResultsPageState extends State<ResultsPage>
         lat: center.latitude,
         lng: center.longitude,
         condition: _predictedCondition,
+        riskLevel: _riskLevel,
         radiusKm: 100,
       );
       if (!mounted) return;
@@ -437,6 +439,8 @@ class _ResultsPageState extends State<ResultsPage>
             (d['latitude'] as num).toDouble(),
             (d['longitude'] as num).toDouble(),
           ),
+          distanceKm: ((d['distance_km'] as num?) ?? 50.0).toDouble(),
+          isSpecialtyMatch: (d['is_specialty_match'] as bool?) ?? false,
         );
       }).toList();
 
@@ -665,13 +669,20 @@ class _ResultsPageState extends State<ResultsPage>
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else {
                   final data = snapshot.data!;
-                  // Capture the top predicted condition once the future resolves
+                  // Capture predicted condition + risk level once the future resolves
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     final preds = data['top_3_predictions'] as List?;
+                    final risk = data['risk_level'] as String?;
+                    final needsRefetch = _riskLevel == null && risk != null;
                     if (preds != null && preds.isNotEmpty && _predictedCondition == null) {
                       setState(() {
                         _predictedCondition = (preds.first as Map)['disease'] as String?;
+                        _riskLevel = risk;
                       });
+                      if (needsRefetch) _fetchRealDoctors(_userLocation);
+                    } else if (needsRefetch) {
+                      setState(() => _riskLevel = risk);
+                      _fetchRealDoctors(_userLocation);
                     }
                   });
                   final filteredDoctors = _doctors.where((doctor) {
@@ -1387,14 +1398,16 @@ class _ResultsPageState extends State<ResultsPage>
   }
 
   double _matchScore(_Doctor doctor, String riskLevel) {
-    var score = 72.0;
-    final badges = _matchBadges(doctor, riskLevel);
-    if (badges.any((b) => b.contains('Respiratory'))) score += 10;
-    if (badges.any((b) => b.contains('Rapid'))) score += 8;
-    if (badges.any((b) => b.contains('Complex'))) score += 6;
-    if (riskLevel == 'High') score += 4;
-    if (doctor.rating > 4.6) score += 4;
-    return score.clamp(60, 98);
+    double score = doctor.isSpecialtyMatch ? 72.0 : 20.0;
+    final dist = (doctor.distanceKm ?? 50.0).clamp(0.0, 100.0);
+    score += 20.0 * (1 - dist / 100.0);
+    if (riskLevel == 'High' &&
+        (doctor.specialty.toLowerCase().contains('urgent') ||
+         doctor.specialty.toLowerCase().contains('emergency') ||
+         doctor.specialty.toLowerCase().contains('internal medicine'))) {
+      score += 8;
+    }
+    return score.clamp(15.0, 98.0);
   }
 
   Color _getRiskColor(String riskLevel) {
@@ -1420,6 +1433,8 @@ class _Doctor {
     required this.availability,
     required this.phone,
     required this.location,
+    this.distanceKm,
+    this.isSpecialtyMatch = false,
   });
 
   final int id;
@@ -1429,6 +1444,8 @@ class _Doctor {
   final String availability;
   final String phone;
   final LatLng location;
+  final double? distanceKm;
+  final bool isSpecialtyMatch;
 }
 
 class _DoctorTemplate {
