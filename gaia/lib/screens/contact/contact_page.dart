@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:gaia/app/routes.dart';
@@ -21,6 +22,8 @@ class _ContactPageState extends State<ContactPage> {
   String? _error;
   int? _rateLimitSecondsLeft;
 
+  Timer? _pollTimer;
+
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -36,6 +39,7 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -47,6 +51,7 @@ class _ContactPageState extends State<ContactPage> {
       final thread = await ApiService.getMyContactThread();
       setState(() { _thread = thread; _loading = false; });
       _scrollToBottom();
+      if (thread != null) _startPolling();
     } catch (e) {
       setState(() { _error = _parseError(e); _loading = false; });
     }
@@ -57,9 +62,34 @@ class _ContactPageState extends State<ContactPage> {
     try {
       final thread = await ApiService.createContactThread();
       setState(() { _thread = thread; _loading = false; });
+      _startPolling();
     } catch (e) {
       setState(() { _error = _parseError(e); _loading = false; });
     }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollMessages());
+  }
+
+  Future<void> _pollMessages() async {
+    if (_thread == null) return;
+    try {
+      final updated = await ApiService.getMyContactThread();
+      if (!mounted) return;
+      final prevCount = ((_thread!['messages'] as List?) ?? []).length;
+      final newCount = ((updated?['messages'] as List?) ?? []).length;
+      if (newCount > prevCount) {
+        setState(() => _thread = updated);
+        _scrollToBottom();
+      }
+      // Stop polling once thread is closed
+      if (updated?['status'] == 'closed') {
+        _pollTimer?.cancel();
+        setState(() => _thread = updated);
+      }
+    } catch (_) {}
   }
 
   Future<void> _send() async {
@@ -69,14 +99,13 @@ class _ContactPageState extends State<ContactPage> {
 
     setState(() { _sending = true; _error = null; _rateLimitSecondsLeft = null; });
     try {
-      final msg = await ApiService.sendContactMessage(threadId: threadId, content: text);
+      await ApiService.sendContactMessage(threadId: threadId, content: text);
       _inputController.clear();
-      final messages = List<dynamic>.from(_thread!['messages'] as List? ?? []);
-      messages.add(msg);
-      setState(() {
-        _thread = {..._thread!, 'messages': messages};
-        _sending = false;
-      });
+      // Refresh from server so local state and server are in sync —
+      // prevents duplicates when the poll fires at the same time.
+      final updated = await ApiService.getMyContactThread();
+      if (!mounted) return;
+      setState(() { _thread = updated; _sending = false; });
       _scrollToBottom();
     } catch (e) {
       final errStr = e.toString();
@@ -545,7 +574,7 @@ class _ContactPageState extends State<ContactPage> {
                       Text(
                         isClosed ? 'Conversation closed' : 'Online · Replies within 24h',
                         style: textTheme.bodySmall?.copyWith(
-                          color: isClosed ? AppColors.gray.shade600 : AppColors.turquoise,
+                          color: isClosed ? AppColors.gray.shade700 : AppColors.turquoise,
                         ),
                       ),
                     ],
@@ -571,7 +600,7 @@ class _ContactPageState extends State<ContactPage> {
                 ? Center(
                     child: Text(
                       'Send your first message below.',
-                      style: textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade600),
+                      style: textTheme.bodyMedium?.copyWith(color: AppColors.gray.shade700),
                     ),
                   )
                 : ListView.builder(
@@ -633,7 +662,7 @@ class _ContactPageState extends State<ContactPage> {
                       enabled: !_sending && _rateLimitSecondsLeft == null,
                       decoration: InputDecoration(
                         hintText: 'Type your message…',
-                        hintStyle: TextStyle(color: AppColors.gray.shade500),
+                        hintStyle: TextStyle(color: AppColors.gray.shade700),
                         filled: true,
                         fillColor: AppColors.white,
                         counterText: '',

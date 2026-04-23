@@ -256,7 +256,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray.shade600),
+                    Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray.shade700),
                   ],
                 ),
               ),

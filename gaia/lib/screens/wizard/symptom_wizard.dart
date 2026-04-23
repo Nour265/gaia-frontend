@@ -584,11 +584,11 @@ class _SymptomWizardState extends State<SymptomWizard> {
                     thickness: 6.0,                // Optional: make it a bit thicker
                     radius: const Radius.circular(8),
                   child: Builder(builder: (context) {
-                    final crossAxisCount = MediaQuery.of(context).size.width < 700 ? 2 : 4;
+                    final crossAxisCount = MediaQuery.of(context).size.width < 700 ? 1 : 4;
                     return GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        childAspectRatio: crossAxisCount == 2 ? 3.0 : 4.0,
+                        childAspectRatio: 4.0,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),

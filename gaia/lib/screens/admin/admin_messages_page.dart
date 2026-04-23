@@ -100,7 +100,7 @@ class _AdminMessagesPageState extends State<AdminMessagesPage> {
                   child: Center(
                     child: Text(
                       'No conversations yet.',
-                      style: textTheme.bodyLarge?.copyWith(color: AppColors.gray.shade600),
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.gray.shade700),
                     ),
                   ),
                 )
@@ -159,7 +159,7 @@ class _AdminMessagesPageState extends State<AdminMessagesPage> {
                   height: 44,
                   decoration: BoxDecoration(
                     gradient: isClosed
-                        ? LinearGradient(colors: [AppColors.gray.shade300, AppColors.gray.shade400])
+                        ? LinearGradient(colors: [AppColors.gray.shade300, AppColors.gray.shade300])
                         : const LinearGradient(colors: [AppColors.purple, AppColors.turquoise]),
                     shape: BoxShape.circle,
                   ),
@@ -200,7 +200,7 @@ class _AdminMessagesPageState extends State<AdminMessagesPage> {
                       const SizedBox(height: 2),
                       Text(
                         userEmail,
-                        style: textTheme.bodySmall?.copyWith(color: AppColors.gray.shade600),
+                        style: textTheme.bodySmall?.copyWith(color: AppColors.gray.shade700),
                       ),
                       if (lastMsg != null) ...[
                         const SizedBox(height: 6),
@@ -220,10 +220,10 @@ class _AdminMessagesPageState extends State<AdminMessagesPage> {
                   children: [
                     Text(
                       '$msgCount msg${msgCount == 1 ? '' : 's'}',
-                      style: textTheme.bodySmall?.copyWith(color: AppColors.gray.shade600),
+                      style: textTheme.bodySmall?.copyWith(color: AppColors.gray.shade700),
                     ),
                     const SizedBox(height: 8),
-                    Icon(Icons.chevron_right, color: AppColors.gray.shade500),
+                    Icon(Icons.chevron_right, color: AppColors.gray.shade700),
                   ],
                 ),
               ],

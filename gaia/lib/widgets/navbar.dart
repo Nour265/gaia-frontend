@@ -430,7 +430,7 @@ class Logo extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(ImagePath.logo),
+            Image.asset(ImagePath.logo, width: 44, height: 44, fit: BoxFit.contain),
             const SizedBox(width: 10.0),
             Text('GAIA', style: textTheme.titleMedium),
           ],

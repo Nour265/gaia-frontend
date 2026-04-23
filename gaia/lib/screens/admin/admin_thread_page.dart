@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gaia/services/api_service.dart';
 import 'package:gaia/values/values.dart';
@@ -24,6 +25,8 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
   bool _closing = false;
   String? _error;
 
+  Timer? _pollTimer;
+
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -35,6 +38,7 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -46,9 +50,33 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
       final thread = await ApiService.getAdminContactThread(widget.threadId);
       setState(() { _thread = thread; _loading = false; });
       _scrollToBottom();
+      if (thread['status'] != 'closed') _startPolling();
     } catch (e) {
       setState(() { _error = _parseError(e); _loading = false; });
     }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollMessages());
+  }
+
+  Future<void> _pollMessages() async {
+    if (_thread == null) return;
+    try {
+      final updated = await ApiService.getAdminContactThread(widget.threadId);
+      if (!mounted) return;
+      final prevCount = ((_thread!['messages'] as List?) ?? []).length;
+      final newCount = ((updated['messages'] as List?) ?? []).length;
+      if (newCount > prevCount) {
+        setState(() => _thread = updated);
+        _scrollToBottom();
+      }
+      if (updated['status'] == 'closed') {
+        _pollTimer?.cancel();
+        setState(() => _thread = updated);
+      }
+    } catch (_) {}
   }
 
   Future<void> _sendReply() async {
@@ -57,17 +85,15 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
 
     setState(() { _sending = true; _error = null; });
     try {
-      final msg = await ApiService.adminReplyContactThread(
+      await ApiService.adminReplyContactThread(
         threadId: widget.threadId,
         content: text,
       );
       _inputController.clear();
-      final messages = List<dynamic>.from(_thread!['messages'] as List? ?? []);
-      messages.add(msg);
-      setState(() {
-        _thread = {..._thread!, 'messages': messages};
-        _sending = false;
-      });
+      // Refresh from server to stay in sync with the poll timer.
+      final updated = await ApiService.getAdminContactThread(widget.threadId);
+      if (!mounted) return;
+      setState(() { _thread = updated; _sending = false; });
       _scrollToBottom();
     } catch (e) {
       setState(() { _error = _parseError(e); _sending = false; });
@@ -167,7 +193,7 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
                                     Text(
                                       isClosed ? 'Conversation closed' : 'Open conversation',
                                       style: textTheme.bodySmall?.copyWith(
-                                        color: isClosed ? AppColors.gray.shade600 : AppColors.turquoise,
+                                        color: isClosed ? AppColors.gray.shade700 : AppColors.turquoise,
                                       ),
                                     ),
                                   ],
@@ -221,7 +247,7 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
                                             child: Text(
                                               'No messages yet.',
                                               style: textTheme.bodyMedium?.copyWith(
-                                                color: AppColors.gray.shade600,
+                                                color: AppColors.gray.shade700,
                                               ),
                                             ),
                                           )
@@ -271,7 +297,7 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
                                             enabled: !_sending,
                                             decoration: InputDecoration(
                                               hintText: 'Reply to ${widget.userName}…',
-                                              hintStyle: TextStyle(color: AppColors.gray.shade500),
+                                              hintStyle: TextStyle(color: AppColors.gray.shade700),
                                               filled: true,
                                               fillColor: AppColors.white,
                                               counterText: '',
@@ -332,7 +358,7 @@ class _AdminThreadPageState extends State<AdminThreadPage> {
                                       child: Text(
                                         'This conversation is closed.',
                                         style: textTheme.bodyMedium?.copyWith(
-                                          color: AppColors.gray.shade600,
+                                          color: AppColors.gray.shade700,
                                         ),
                                       ),
                                     ),
